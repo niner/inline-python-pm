@@ -69,6 +69,9 @@ WriteMakefile(
 	      INC => $sel->{incpath},
 	      LIBS => (join " ", @$sel{qw(libpath libpython syslibs)}),
 	      NAME => 'Inline::Python',
+              ABSTRACT_FROM => 'Python.pod',
+              AUTHOR => 'Neil Watkiss <NEILW@cpan.org>',
+              LICENSE => 'perl',
 	      VERSION_FROM => 'Python.pm',
 	      PREREQ_PM => {
 			    Inline => 0.42,
