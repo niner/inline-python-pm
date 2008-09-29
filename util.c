@@ -18,6 +18,7 @@ int free_inline_py_obj(pTHX_ SV* obj, MAGIC *mg)
 {
   if (mg && mg->mg_type == '~' && Inline_Magic_Check(mg->mg_ptr)) {
     IV iv = SvIV(obj);
+    Printf(("free_inline_py_obj: %p, iv: %p, ob_prev: %p, ob_next: %p, refcnt: %i\n", obj, iv, ((PyObject *)iv)->_ob_prev, ((PyObject *)iv)->_ob_next, ((PyObject *)iv)->ob_refcnt));
     Py_XDECREF((PyObject *)iv); /* just in case */
   }
   else {

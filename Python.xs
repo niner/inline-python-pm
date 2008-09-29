@@ -213,12 +213,12 @@ py_call_function(PYPKG, FNAME, ...)
   }
   Printf(("calling func\n"));
   py_retval = PyObject_CallObject(func, tuple);
+  Py_DECREF(func);
+  Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
     fprintf(stderr,"Error: Python error occurred:\n");
     PyErr_Print();
-    Py_XDECREF(tuple);
-    Py_XDECREF(func);
     croak("Error -- PyObject_CallObject(...) failed.\n");
     XSRETURN_EMPTY;
   }
@@ -234,8 +234,10 @@ py_call_function(PYPKG, FNAME, ...)
   /* For whatever reason, GIMME_V always returns G_VOID when we get forwarded
    * from eval_python(). 
    */
-  if (GIMME_V == G_VOID)
+  if (GIMME_V == G_VOID) {
+    Py_DECREF(py_retval);
     XSRETURN_EMPTY;
+  }
 #endif
 
   Printf(("calling Py2Pl\n"));
@@ -321,11 +323,11 @@ py_call_method(_inst, mname, ...)
 
   Printf(("calling func\n"));
   py_retval = PyObject_CallObject(method, tuple);
+  Py_DECREF(method);
+  Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
     PyErr_Print();
-    Py_DECREF(tuple);
-    Py_DECREF(method);
     croak("PyObject_CallObject(...) failed.\n");
     XSRETURN_EMPTY;
   }
@@ -333,8 +335,10 @@ py_call_method(_inst, mname, ...)
   Printf(("no error\n"));
 #ifdef CHECK_CONTEXT
   /* We can save a little time by checking our context */
-  if (GIMME_V == G_VOID)
+  if (GIMME_V == G_VOID) {
+    Py_DECREF(py_retval);
     XSRETURN_EMPTY;
+  }
 #endif
 
   Printf(("calling Py2Pl()\n"));
@@ -357,19 +361,3 @@ py_call_method(_inst, mname, ...)
     XPUSHs(ret);
   }
 
-MODULE = Inline::Python   PACKAGE = Inline::Python::Object
-
-void
-DESTROY(obj)
-        SV* obj;
-  CODE:
-      if (SvROK(obj) && SvTYPE(SvRV(obj))==SVt_PVMG) {
-        SV* obj_deref = SvRV(obj);
-        IV ptr = SvIV(obj_deref);
-        PyObject *py_object;
-        if (!ptr) {
-          croak("destroy_python_object caught NULL PyObject pointer. Are you using a Python object?\n");
-        }
-        py_object = (PyObject*)ptr;
-        Py_DECREF(py_object);
-      }

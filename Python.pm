@@ -325,4 +325,8 @@ sub AUTOLOAD {
     return &Inline::Python::py_call_method;
 }
 
+# avoid AUTOLOAD warning
+sub DESTROY {
+}
+
 1;

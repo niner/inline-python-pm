@@ -52,7 +52,7 @@ SV *Py2Pl(PyObject * obj) {
 #endif
 	/* elw: this needs to be early */
 	/* None (like undef) */
-	if (obj == Py_None) {
+	if (!obj || obj == Py_None) {
 		Printf(("Py2Pl: Py_None\n"));
 		return &PL_sv_undef;
 	}
@@ -101,7 +101,9 @@ SV *Py2Pl(PyObject * obj) {
 		/*SvREADONLY_on(inst); *//* to uncomment this means I can't
 			re-bless it */
 		Py_INCREF(obj);
-		Printf(("Py2Pl: Instance\n"));
+		Printf(("Py2Pl: Instance. Obj: %p, inst_ptr: %p\n", obj, inst_ptr));
+
+		sv_2mortal(inst_ptr);
 		return inst_ptr;
 	}
 
@@ -183,6 +185,10 @@ SV *Py2Pl(PyObject * obj) {
 	/* a string (or number) */
 	else {
 		PyObject *string = PyObject_Str(obj);	/* new reference */
+		if (!string) {
+			Printf(("Py2Pl: string is NULL!? -> Py_None\n"));
+			return &PL_sv_undef;
+		}
 		char *str = PyString_AsString(string);
 		SV *s2 = newSVpv(str, PyString_Size(string));
 		Printf(("Py2Pl: string / number\n"));
@@ -217,10 +223,11 @@ PyObject *Pl2Py(SV * obj) {
 			IV ptr = SvIV(obj_deref);
 			if (!ptr) {
 				croak
-					("Internal error: Pl2Py() caught NULL PyObject* at %s, line %s.\n",
+					("Internal error: Pl2Py() caught NULL PyObject* at %s, line %i.\n",
 					 __FILE__, __LINE__);
 			}
 			o = (PyObject *) ptr;
+			Py_INCREF(o);
 		}
 		else {
 			HV *stash = SvSTASH(obj_deref);
@@ -255,6 +262,7 @@ PyObject *Pl2Py(SV * obj) {
 			fprintf(stderr, "your Perl string \"%s\" could not \n",
 					SvPV_nolen(obj));
 			fprintf(stderr, "be converted to a Python string\n");
+			o = PyFloat_FromDouble((double) 0);
 		}
 		Py_DECREF(tmp);
 	}
