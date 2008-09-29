@@ -1,0 +1,682 @@
+=head1 NAME
+
+Inline::Python - Write Perl subs and classes in Python.
+
+=head1 SYNOPSIS
+
+   print "9 + 16 = ", add(9, 16), "\n";
+   print "9 - 16 = ", subtract(9, 16), "\n";
+
+   use Inline Python => <<'END_OF_PYTHON_CODE';
+   def add(x,y): 
+      return x + y
+
+   def subtract(x,y):
+      return x - y
+
+   END_OF_PYTHON_CODE
+
+=head1 DESCRIPTION
+
+The C<Inline::Python> module allows you to put Python source code
+directly "inline" in a Perl script or module. It sets up an in-process
+Python interpreter, runs your code, and then examines Python's symbol table
+for things to bind to Perl. The process of interrogating the Python 
+interpreter for globals only occurs the first time you run your Python code. 
+The namespace is cached, and subsequent calls use the cached version.
+
+This document describes C<Inline::Python>, the Perl package which gives you
+access to a Python interpreter. For lack of a better place to keep it, it 
+also gives you instructions on how to use C<perlmodule>, the Python package 
+which gives you access to the Perl interpreter.
+
+=head1 WHAT'S NEW?
+
+Version 0.21 provides the ability to bind to 'new-style' classes (as
+defined by the python PEP's 252 and 253.)  See L<New-Style Classes> for
+details.
+
+
+=head1 Using the Inline::Python Module
+
+Using Inline::Python will seem very similar to using another Inline
+language, thanks to Inline's consistent look and feel.
+
+This section will explain the different ways to use Inline::Python.
+For more details on C<Inline>, see 'perldoc Inline'. 
+
+=head2 Giving Your Source to Inline
+
+The most basic form for using C<Inline::Python> is this:
+
+   use Inline Python => 'Python source code';
+
+Of course, you can use Perl's "here document" style of quoting to make 
+the code slightly easier to read:
+
+   use Inline Python => <<'END';
+
+     Python source code goes here.
+
+   END
+
+The source code can also be specified as a filename, a subroutine
+reference (sub routine should return source code), or an array
+reference (array contains lines of source code). The recommended way
+of using Inline is this:
+
+   use Inline Python;
+
+   ...
+
+   __END__
+   __Python__
+
+   Python source code goes here.
+
+This information is detailed in 'perldoc Inline'.
+
+=head2 Importing Functions
+
+Maybe you have a whole library written in Python that only needs one entry
+point. You'll want to import that function. It's as easy as this:
+
+   use Inline Python;
+
+   doit();
+
+   __END__
+   __Python__
+
+   from mylibrary import doit
+
+Inline::Python actually binds to every function in Python's "global" namespace 
+(those of you in the know, know that namespace is called '__main__'). So if 
+you had another function there, you'd get that too.
+
+=head2 Importing Classes
+
+If you've written a library in Python, you'll make it object-oriented.
+That's just something Python folks do. So you'll probably want to import a
+class, not a function. That's just as easy:
+
+   use Inline Python;
+
+   my $obj = new Myclass;
+
+   __END__
+   __Python__
+
+   from mylibrary import myclass as Myclass
+
+=head2 New-Style Classes
+
+As of python 2.2, the python internals have begun to change in a way
+which makes types 'look' more like classes.  This means that your python
+code can now subclass builtin python types such as lists, tuples,
+integers, and etc.  It also means that identifying python objects and
+creating Perl bindings for them has become a little trickier.
+
+See Guido's write-up (http://www.python.org/2.2.2/descrintro.html) and
+the relevant Python Enhancement Proposals (PEP) numbers 252 and 253 for
+details about the python code.  Also, see the mailing-list discussion
+(http://mail.python.org/pipermail/python-dev/2004-July/046060.html) for
+possible implications regarding C-language python extensions.
+
+This change should not affect code which uses Inline::Python, except
+that it allows you to bind to python classes which have been written
+using these new features.  In most cases, you will be importing an
+entire class from an external library as defined in the example above. 
+
+In other cases, you may be writing Inline::Python code as follows:
+
+   use Inline Python => <<'END';
+   class Foo(object):
+      def __init__(self):
+         print "new Foo object being created"
+         self.data = {}
+      def get_data(self): return self.data
+      def set_data(self,dat): 
+         self.data = dat
+   END
+
+Additional caveats may exist.  Note that if the python class is
+subclassing one of the builtin types which would normally be accessible
+as a 'Perlish' translation, that the instance will be an opaque object
+accessible only through its class methods.
+
+  # Class is defined as 'def Class(float):'
+  my $obj = Class->new(4);
+  print $$obj "\n"; # will NOT print '4.0'
+
+=head2 New-Style
+
+=head2 Boundary Conditions
+
+What if you have a class that wasn't imported? Can you deal with instances 
+of that class properly?
+
+Of course you can! Check this out:
+
+   use Inline Python => <<END;
+
+   def Foo():
+       class Bar:
+           def __init__(self):
+               print "new Bar()"
+           def tank():
+               return 10
+       return Bar()
+
+   END
+
+   my $o = Foo();
+   $o->tank();
+
+In this example, C<Bar> isn't imported because it isn't a global -- it's hidden
+inside the function Foo(). But Foo() is imported into Perl, and it returns an 
+instance of the C<Bar> class. What happens then?
+
+Whenever Inline::Python needs to return an instance of a class to Perl, it 
+generates an instance of Inline::Python::Object, the base class for all 
+Inline::Python objects. This base class knows how to do all the things you 
+need: calling methods, in this case.
+
+=head1 Using Perl inside Python (inside Perl)
+
+This section doesn't talk at all about C<Inline::Python>. It's about how
+to use C<perl>. C<perl> is a Python module bundled with Inline::Python
+that gives you access to Perl from inside your Python code. In the
+future, it will be possible to compile Inline::Python to work the other
+way around -- to use Python as the main programming language, and jump
+into Perl when you want to.
+
+The C<perl> package exposes Perl packages and subs. It uses the same code as
+Inline::Python to automatically translate parameters and return values as
+needed. Packages and subs are represented as C<PerlPkg> and C<PerlSub>,
+respectively.
+
+=head1 Using the PerlPkg Type
+
+The C<perl> package is actually not a package at all. As soon as you import
+it, it replaces itself with an instance of the PerlPkg class, wrapping
+the Perl package "main". Perl's 'main' package is analogous to '__main__' in
+Python.
+
+Here's what you can do with the 'main' PerlPkg:
+
+=head2 eval()
+
+   eval(source code)
+
+Unlike Python, Perl has no exec() -- the eval() function always returns the
+result of the code it evaluated. eval() takes exactly one argument, the
+perl source code, and returns the result of the evaluation.
+
+=head2 require() and use()
+
+   require(module name)
+   use(module name)
+
+Use require() instead of C<import>. In Python, you'd say this:
+
+   import md5
+
+But using the perl module, you'd say this:
+
+   perl.require("Digest::MD5")
+
+Of course, in Perl there's more than one way to do it (TM). require() doesn't
+run the package's import() function. If you want symbols exported, for 
+instance, use use() instead of require().
+
+Here is the functionality common to all PerlPkg instances:
+
+=head2 __getattr__
+
+Python's __getattr__() function allows the package to dynamically return
+something to satisfy the request. For instance, you can get at the subs
+in a perl package by using dir() (which is the same as C<getattr(perl,
+'__methods__')>.
+
+Here's an example:
+
+   perl.eval("sub f { 10 }")    # define main::f
+   f = perl.f
+   f(); f("hello")              # no argument checking
+   if perl.f() != 10: 
+       import sys; sys.exit(1)
+
+Notice what happens. First we call eval() to define a sub 'f'. Then we 
+say C<perl.f>, which goes into the __getattr__() method. We check the Perl
+namespace and see a function called f, which we return, wrapped in an 
+instance of the PerlSub type.
+
+=head1 Using the PerlSub Type
+
+All Perl subs are wrapped in the PerlSub type, so that they can emulate Python
+subroutines. You can call them. It's all good. Here's what you can do with
+PerlSub objects:
+
+=head2 Call
+
+PerlSub catches the call action and forwards the call to the real sub in Perl.
+
+=head2 Set the evaluation flags
+
+Perl has this notion of calling context. A subroutine can ask Perl what it is
+being used for. The idea is that if no one cares about your return value, you
+might be able to save time by not building it. By default, PerlSub objects
+evaluate in 'list' context with no extra flags turned on. 
+
+   perl.eval("sub f { 10 }")
+   f = perl.f
+   f.flags = f.flags | f.G_SCALAR
+   x = f()
+
+Here are the most common flags you'll need. For more details about these and
+other possible flags, see L<perlcall>.
+
+=over 4
+
+=item 1
+
+G_VOID
+
+Calls the Perl subroutine in a void context. Guarantees that no results will
+be returned. If any are returned, Perl deletes them.
+
+=item 2
+
+G_SCALAR
+
+Calls the Perl subroutine in a scalar context. Ensures that only one element 
+is returned from the sub. If the sub returns a list, only the last element 
+is actually saved.
+
+=item 3
+
+G_ARRAY
+
+Calls the Perl subroutine in a list context. Ensures that any items returned
+from the subroutine are returned. This is the default for PerlSub objects.
+
+=item 4
+
+G_DISCARD
+
+If you are not interested in the return values, you can optimize slightly by
+telling Perl, and it will discard all returned values for you.
+
+=item 5
+
+G_NOARGS
+
+If you are not passing any arguments, you can optimize the call so that Perl
+doesn't bother setting up the stack for parameters.
+
+=item 6
+
+G_EVAL
+
+It is possible for the Perl sub to fail, either by calling die() explicitly 
+or by calling a non-existent sub. By default, the process will terminate 
+immediately. To avoid this happening, you can trap the exception using the 
+G_EVAL flag.
+
+=back
+
+=head1 Under the Hood
+
+When Inline::Python imports a class or function, it creates subs in Perl
+which delegate the action to some C functions I've written, which know how
+to call Python functions and methods.
+
+   use Inline Python => <<'END';
+
+   class Foo:
+      def __init__(self):
+         print "new Foo object being created"
+         self.data = {}
+      def get_data(self): return self.data
+      def set_data(self,dat): 
+         self.data = dat
+
+   END
+
+Inline::Python actually generates this code and eval()s it:
+
+   package main::Foo;
+   @main::Foo::ISA = qw(Inline::Python::Object);
+
+   sub new {
+     splice @_, 1, 0, "__main__", "Foo";
+     return &Inline::Python::py_new_object;
+   }
+
+   sub set_data {
+     splice @_, 1, 0, "set_data";
+     return &Inline::Python::py_call_method;
+   }
+
+   sub get_data {
+     splice @_, 1, 0, "get_data";
+     return &Inline::Python::py_call_method;
+   }
+
+   sub __init__ {
+     splice @_, 1, 0, "__init__";
+     return &Inline::Python::py_call_method;
+   }
+
+More about those C<py_*> functions, and how to generate this snippet of code
+yourself, in the next section.
+
+=head1 The Do-it-yourselfer's Guide to Inline::Python
+
+Sometimes you don't actually want to do things the Inline Way. Maybe you
+just want to use a Python class as-is, without ever treating it like a normal
+Perl class:
+
+   use Inline::Python qw(py_eval);
+
+   py_eval(<<'END');
+
+   class MyClass:
+       def __init__(self): self.data = {}
+       def put(self, key, value): self.data[key] = value
+       def get(self, key):
+           try: return self.data[key]
+           except KeyError: return None
+
+   END
+
+   my $o = Inline::Python::Object->new('__main__', 'MyClass');
+   $o->put("candy", "yummy");
+   die "Ooops" unless $o->get("candy") eq 'yummy';
+
+Inline::Python provides a full suite of exportable functions you can use to
+manipulate Python objects and functions "directly".
+
+=head2 py_eval()
+
+   py_eval("python source code", [context])
+
+The new py_eval() behaves a little like Perl's eval(). It evaluates the code 
+or croaks on failure. The optional context argument can be used to place 
+restrictions on the type of code allowed, as well as influence what happens
+to the result.
+
+=over 4
+
+=item 0
+
+Accepts only expressions. Complete statements yield a syntax error. An
+expression is anything that can appear to the right of an '=' sign. Returns
+the value of the expression.
+
+=item 1
+
+The default. Accepts arbitrarily long input, which may be any valid Python 
+code. Always returns C<undef>.
+
+=item 2
+
+Accepts exactly one statement, and prints the result to STDOUT. This is
+how Python works in interactive mode. Always returns C<undef>.
+
+=back
+
+=head2 py_call_function()
+
+   py_call_function("package", "function", args...)
+
+This function runs a Python function and returns the result. The "package" and
+"function" uniquely identify a function, and the remaining args are passed 
+to the function.
+
+Those who know Python well enough will know you can actually "run" a class 
+and get an instance of that class back. But in case that's just too weird for 
+you, I've given you a slightly higher-level wrapper around that common idiom.
+
+=head2 py_new_object()
+
+   py_new_object("perl package", "python package", 
+                 "python class", args...)
+
+This function creates an instance of a Python class. The "python class" is the
+name of the class inside the "python package". The new object is blessed into
+the given "perl package". The remaining args are passed directly to the
+constructor.
+
+=head2 py_call_method()
+
+   py_call_method(object, "method name", args...)
+
+Given an instance of a Python class, this function can call a method
+on it. This is useful if you have an object which is blessed into a
+non-existent Perl package. Attempts to use Perl's object syntax would fail,
+because Perl wouldn't find any methods in that package. But py_call_method() 
+can always perform method calls correctly since it unwraps the underlying
+Python object.
+
+=head2 eval_python()
+
+Unlike in previous releases of Inline::Python, eval_python() can now return 
+the result of the code. As before, eval_python() is overloaded:
+
+=over 4
+
+=item 1 
+
+eval_python(code, [context])
+
+Evaluate the code using py_eval().
+
+=item 2
+
+eval_python(python package, function, args...)
+
+Run the given function and return the results using py_call_function().
+
+=item 3
+
+eval_python(object, method, args...)
+
+Invoke the given method on the object using py_call_method() and return the
+results.
+
+=back
+
+=head2 py_bind_func()
+
+   py_bind_func("symbol name", "python package", "function")
+
+This function imports a Python function (named "function") as the symbol
+named by "perl symbol". After this function has been called, the
+Python function can be called as if it were a Perl function in the given
+package.
+
+   use Inline::Python qw(py_eval py_bind_func);
+
+   py_eval(<<'END');
+
+   def Foo():
+      return 42
+
+   END
+
+   # For the purposes of this example, so I know the package, I set it:
+   py_bind_func("main::Bar", "__main__", "Foo");
+   print "The meaning of life is: ", Bar(), "\n";
+
+This call to py_bind_func() will generate this code and eval() it:
+
+   sub main::Bar {
+       unshift @_, "__main__", "Foo";
+       return &Inline::Python::py_call_function;
+   }
+
+=head2 py_bind_class()
+
+   py_bind_class("perl package", "python package", "class", methods...)
+
+This function imports a Python class (named "class") into the Perl package
+named by "perl package". After this function has been called, the
+Perl package will look just like a regular Perl class.
+
+The example I showed earlier in the "Under the Hood" section shows the 
+output of py_bind_class. Here's another look at it:
+
+   use Inline::Python qw(py_eval py_bind_class);
+
+   py_eval(<<'END');
+
+   class Foo:
+      def __init__(self):
+         print "new Foo object being created"
+         self.data = {}
+      def get_data(self): return self.data
+      def set_data(self,dat): 
+         self.data = dat
+
+   END
+
+   py_bind_class("main::Foo", "__main__", "Foo", "set_data", "get_data");
+   my $o = new Foo;
+
+This call to py_bind_class() will generate this code and eval() it:
+
+   package main::Foo;
+   @main::Foo::ISA = qw(Inline::Python::Object);
+
+   sub new {
+     splice @_, 1, 0, "__main__", "Foo";
+     return &Inline::Python::py_new_object;
+   }
+
+   sub set_data {
+     splice @_, 1, 0, "set_data";
+     return &Inline::Python::py_call_method;
+   }
+
+   sub get_data {
+     splice @_, 1, 0, "get_data";
+     return &Inline::Python::py_call_method;
+   }
+
+Note that if you want methods to be created as I've shown, you must pass
+them to py_bind_class() yourself. It doesn't create anything except new()
+and the @ISA array. It doesn't need to, since the base class knows how to
+deal with any method call -- but it's also slower, since it has to walk up
+the inheritance tree to the AUTOLOAD method. I recommend binding to
+the functions you know about, especially if you're the one writing the code.
+If it's auto-generated, use py_study_package(), described below.
+
+=head2 py_study_package()
+
+   py_study_package(["package"])
+
+This function interrogates the Python interpreter about the given package
+(or '__main__' if you don't specify one). It returns a list of key/value
+pairs, so it should be used like this:
+
+   py_eval('import pickle');
+   my %namespace = py_study_package("pickle");
+
+On my machine, %namespace looks something like this:
+
+   $VAR1 = {
+             'classes' => { ... },
+             'functions' => [
+                              '_keep_alive',
+                              'loads',
+                              'dump',
+                              'load',
+                              'dumps',
+                              'test',
+                              'whichmodule'
+                            ]
+           };
+
+Each result can be fed to py_bind_function() and py_bind_class(), which is 
+exactly what Inline::Python itself does.
+
+=head1 SUPPORTED PLATFORMS
+
+This is an ALPHA release of Inline::Python. Further testing and
+expanded support for other operating systems and platforms will be a
+focus for future releases. It has been tested on RedHat Linux 6.2 with
+a variety of different Perl and Python configurations. Previous versions
+of Inline::Python working on Windows and Cygwin -- this version has never been
+tested there. I strongly suspect it will require patching. Please send me
+patches.
+
+=head1 SEE ALSO 
+
+For information about using C<Inline>, see L<Inline>.
+
+For information about other Inline languages, see L<Inline-Support>.
+
+Inline::Python's mailing list is inline@perl.org
+
+To subscribe, send email to inline-subscribe@perl.org
+
+=head1 BUGS AND DEFICIENCIES
+
+When reporting a bug, please do the following:
+
+ - Put "use Inline REPORTBUG;" at the top of your code, or 
+   use the command line option "perl -MInline=REPORTBUG ...".
+ - Run your code.
+ - Follow the printed instructions.
+
+Here are some things to watch out for:
+
+=over 4
+
+=item 1
+
+Note that the namespace imported into Perl is NOT recursively
+traversed. Only Python B<globals> are imported into Perl --
+subclasses, subfunctions, and other modules are not imported.
+
+Example:
+
+   use Inline Python => <<'END';
+
+   import mymodule
+
+   class A: 
+       class B: pass
+
+   END
+
+The namespace imported into perl is ONLY that related to C<A>. Nothing
+related to C<mymodule> or C<B> is imported, unless some Python code 
+explicitly copies variables from the mymodule namespace into the global 
+namespace before Perl binds to it.
+
+=back
+
+=head1 AUTHOR
+
+Neil Watkiss <NEILW@cpan.org>
+
+Brian Ingerson <INGY@cpan.org> is the author of Inline, Inline::C and
+Inline::CPR. He was responsible for much encouragement and many
+suggestions throughout the development of Inline::Python.
+
+Eric Wilhelm provided support for 'new-style' classes in version 0.21. Many
+thanks, Eric!
+
+=head1 COPYRIGHT
+
+Copyright (c) 2001, Neil Watkiss.
+
+All Rights Reserved. This module is free software. It may be used,
+redistributed and/or modified under the same terms as Perl itself.
+
+(see http://www.perl.com/perl/misc/Artistic.html)
+
+=cut

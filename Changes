@@ -1,0 +1,47 @@
+Revision history for Perl extension Inline::Python.
+
+0.22  Sun Jan  9 22:29:54 PST 2005
+	[Bug reported by David Dyck]
+	- removed some declarations after statements
+	- newer versions of gcc seem to accept this by default, while older
+	  versions just croak. Of course, the older versions also don't
+	  support -Wdeclaration-after-statement.
+
+0.21  Mon Jul 26 13:40:57 CDT 2004
+	[Patch from Eric Wilhelm]
+	- Added support for 'new-style' python classes which subtype builtin
+	  types per PEP's 252 and 253.
+
+0.20  Mon Jul  9 16:46:56 PDT 2001
+	- Made the Makefile.PL more clever about how it picks debugging 
+	  information. It accepts an optional argument, too, so it's
+	  easy to correct the mistakes.
+
+0.20  Wed Jun 20 16:27:23 PDT 2001
+	- Lots of testing with different versions of Perl & Python
+	- Makefile.PL auto-detects configuration for python >= 2.0
+
+0.20  Sun Jun 17 19:57:18 PDT 2001
+	- Made eval_python return results of running code
+	- py_bind_class(), py_bind_function(), and py_study_package()
+	- py_eval() and py_call_function()
+	- py_new_object() and py_call_method()
+	- Many new test cases
+	- Updated documentation
+	- New language alias 'PYTHON' for Inline::Files support
+	- 'FILTERS' Config option
+	- Removed 'PRIVATE_PRIFIXES' Config option
+	- Added new base class Inline::Python::Object for all objects.
+
+0.15  Sun Jun 10 18:39:23 PDT 2001
+	- Ported to Inline 0.42.
+
+0.14  Thu Mar 22 08:50:33 PST 2001
+	- Added support for passing binary strings between Python & Perl.
+
+0.13  Sun Mar  4 22:09:35 PST 2001
+	- Added Win32 code to search for Python installations on Win32
+	- Eliminated GNU-specific preprocessor macro syntax
+
+0.10  Thu Nov 23 16:46:27 PST 2000
+	- Created Inline::Python.

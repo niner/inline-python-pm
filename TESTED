@@ -1,0 +1,36 @@
+This is a list I try to keep as up-to-date as possible with the state
+of the module. This list is known to be up to date with Inline::Python 
+version 0.20.
+
+Key to reading this list:
+ACROSS: Python Version
+DOWN:	Perl Version
+CELLS:	tester's initials
+
+#============================================================================
+Linux/Alpha/GCC
+#============================================================================
+	1.5.2	1.6.1	2.0.1	2.1	AP203	AP210
+5.005	NW	NW	NW	NW	NW	NW
+5.6.0	NW	NW	NW	NW	NW	NW
+5.6.1	NW	NW	NW	NW	NW	NW
+5.7.0	NW	NW	NW	NW	NW	NW
+5.7.1	NW	NW	NW	NW	NW	NW
+AP623	NW	NW	NW	NW	NW	NW
+AP626	NW	NW	NW	NW	NW	NW
+#============================================================================
+Linux/i686/GCC
+#============================================================================
+	1.5.2	1.6	2.0	2.1	AP2.0	AP2.1
+5.005		NW				NW
+5.6.0	
+5.6.1	
+5.7.0	
+AP623		NW				NW
+AP626		NW				NW
+#============================================================================
+
+Who is this tester dude?
+NW	Neil Watkiss	NEILW@cpan.org
+BI	Brian Ingerson	INGY@cpan.org
+KS	Ken Simpson	KenS@ActiveState.com

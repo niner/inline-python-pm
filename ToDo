@@ -1,0 +1,22 @@
+Complete:
++complete magic manipulation for Python objects entering perl
++add __getattr__ method to modify evaluation flags for PerlSub_object:
+ f = perl.mysub; f.flags = f.G_EVAL | f.G_SCALAR | f.G_DISCARD 
++support method call syntax in PerlSub_object
++add "special" functions for perl: eval(), print(), use()
++add Inline::Python::loadpkg("python package")
+ => done: Inline::Python::py_bind_class()
++make auto-binding to perl packages work properly.
++make py_eval return the results of running the code, not 1 or 0
+
+-make perlmodule.c work alone, as a Python extension module
+-add special case for constructors, to pass the package name as the first
+ argument. How easy is that to discover?
+-write documentation about the perlmodule in Python-land
+-add the ability for perl.eval to evaluate in "main" package, and perl.Foo.eval
+ to evaluate in the "main::Foo" package. Could be very useful?
+-add check for whether perl is threaded to Makefile.PL. Python is always 
+ threaded, so it should add -lpthread to the build if Perl isn't built with
+ ithreads. Only if the auto-discovery failed.
+-add an option to generate Perl bytecode directly (must be specified by the
+ user)

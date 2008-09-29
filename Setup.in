@@ -1,0 +1,2 @@
+*shared*
+perl perlmodule.c py2pl.c util.c Python.c
