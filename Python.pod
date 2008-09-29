@@ -607,8 +607,9 @@ exactly what Inline::Python itself does.
 This is an ALPHA release of Inline::Python. Further testing and
 expanded support for other operating systems and platforms will be a
 focus for future releases. It has been tested on RedHat Linux 6.2 with
-a variety of different Perl and Python configurations. Previous versions
-of Inline::Python working on Windows and Cygwin -- this version has never been
+a variety of different Perl and Python configurations. It also seems to be
+running pretty well on openSUSE 10.3 and 11.0. Previous versions of
+Inline::Python working on Windows and Cygwin -- this version has never been
 tested there. I strongly suspect it will require patching. Please send me
 patches.
 
@@ -657,6 +658,21 @@ related to C<mymodule> or C<B> is imported, unless some Python code
 explicitly copies variables from the mymodule namespace into the global 
 namespace before Perl binds to it.
 
+=item 2
+
+Inline::Python currently leaks a lot of memory. Basically all parameters to
+py_call_function and py_call_method, their return values in void context and
+Python objects passed into perl space. There are probably more leaks hidden
+somewhere. That's not much of a problem for single run scripts, but has to be
+kept in mind when using in long running daemons or mod_perl environments.
+
+The upcoming 0.24 should fix most of these leaks, and will be released as soon
+as the odd segfaults get fixed that surfaced instead. (some code like
+destructors obviously was never run before).
+
+I am very interested in reports of segfaults, leaks other than the ones
+described and of course testcases.
+
 =back
 
 =head1 AUTHOR
@@ -669,6 +685,8 @@ suggestions throughout the development of Inline::Python.
 
 Eric Wilhelm provided support for 'new-style' classes in version 0.21. Many
 thanks, Eric!
+
+Stefan Seifert <NINE@cpan.org> fixed some bugs and is current co-maintainer.
 
 =head1 COPYRIGHT
 

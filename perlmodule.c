@@ -203,7 +203,7 @@ static void
 PerlObj_dealloc(PerlObj_object *self) {
   Py_XDECREF(self->pkg);
 
-  if (self->obj) SvREFCNT_dec(self->obj);
+  if (self->obj) sv_2mortal(self->obj); // mortal instead of DECREF. Object might be return value
 
   PyMem_DEL(self);
 }
@@ -300,6 +300,11 @@ newPerlSub_object(PyObject *package, PyObject *sub, SV *cv) {
     self->sub = sub;
     self->pkg = package;
     self->full = PyString_FromString(str);
+  }
+  else {
+    self->sub = NULL;
+    self->pkg = NULL;
+    self->full = NULL;
   }
 
   /* we don't have to check for errors because we shouldn't have been

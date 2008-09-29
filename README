@@ -53,6 +53,10 @@ INFORMATION:
 The Inline::Python mailing list is inline@perl.org. Send mail to
 inline-subscribe@perl.org to subscribe.
 
-Please send questions and comments to "Neil Watkiss" <NEILW@cpan.org>
+Please send questions and comments to "Stefan Seifert" <NINE@cpan.org>
 
-Copyright (c) 2000, Neil Watkiss. All Rights Reserved.  
+Copyright (c) 2000, Neil Watkiss. All Rights Reserved. This module is free software.
+It may be used, redistributed and/or modified under the same terms as Perl itself.
+
+(see http://www.perl.com/perl/misc/Artistic.html)
+
