@@ -1,11 +1,13 @@
-use Test::Simple tests => 14;
+use Test::Simple tests => 15;
 use strict;
 
 package Fart::Fiddle;
 
 sub new {
     my $class = shift || __PACKAGE__;
+    $class = ref $class if ref $class;
     #print "Creating new ", __PACKAGE__, ": $class\n";
+    $::destroyed--;
     return bless {}, $class;
 }
 
@@ -19,7 +21,7 @@ sub foo {
 sub DESTROY {
     my $self = shift;
     #warn "$self destroyed";
-    $::destroyed = 1;
+    $::destroyed++;
 }
 
 package main;
@@ -51,12 +53,18 @@ def swallow(obj): return
 def call_method(obj):
     return obj.foo()
 
+def test_exec(code, context):
+    exec code
+    res = test_func(context)
+    del(test_func)
+    return res
+
 END
 
 
-our $destroyed = 0;
+our $destroyed = 1;
 sub check_destruction {
-    $destroyed = 0;
+    #$destroyed = 1;
     shift->();
     return $destroyed == 1;
 }
@@ -71,7 +79,7 @@ sub perl_pass_through {
     return shift;
 }
 
-ok(check_destruction(sub { perl_pass_through(Fart::Fiddle->new) }), 'Perl object in Perl');
+ok(check_destruction(sub { perl_pass_through(Fart::Fiddle->new) }), 'Perl object in Perl'); # this is more a test of check_destruction itself
 
 ok(check_destruction(sub { py_call_function('__main__', 'pass_through', Fart::Fiddle->new) }), 'pass_through in void context');
 
@@ -113,3 +121,12 @@ ok(check_destruction( sub {
 $a = py_new_object('A', '__main__', 'A');
 py_call_function('__main__', 'call_method', $a);
 ok(1); # no segfault in previous line
+
+my $test_func = <<'TEST_FUNC';
+def test_func(context):
+    foo = context['foo']
+    context['bar'] = foo.new()
+    return foo
+TEST_FUNC
+
+ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");

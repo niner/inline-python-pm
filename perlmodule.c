@@ -483,7 +483,7 @@ PerlSub_getattr(PerlSub_object *self, char *name) {
   else {
     PyErr_Format(PyExc_AttributeError,
 		 "Attribute '%s' not found for Perl sub '%s'",
-		 name, PyString_AsString(self->pkg));
+		 name, self->pkg ? PyString_AsString(self->pkg) : "");
     retval = NULL;
   }
   return retval;
