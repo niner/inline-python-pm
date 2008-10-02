@@ -660,15 +660,13 @@ namespace before Perl binds to it.
 
 =item 2
 
-Inline::Python currently leaks a lot of memory. Basically all parameters to
-py_call_function and py_call_method, their return values in void context and
-Python objects passed into perl space. There are probably more leaks hidden
-somewhere. That's not much of a problem for single run scripts, but has to be
-kept in mind when using in long running daemons or mod_perl environments.
+Inline::Python is known to leak memory. Version 0.24 fixes most of these leaks,
+but it's still not completely clean and I have no idea where the remaining
+leaks would be.
 
-The upcoming 0.24 should fix most of these leaks, and will be released as soon
-as the odd segfaults get fixed that surfaced instead. (some code like
-destructors obviously was never run before).
+There are also quite a few segfaults on errors happening in Python space. If
+these happen for you, try catching exceptions with try/except, before they
+reach Perl.
 
 I am very interested in reports of segfaults, leaks other than the ones
 described and of course testcases.

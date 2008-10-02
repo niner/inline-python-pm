@@ -1,5 +1,17 @@
 Revision history for Perl extension Inline::Python.
 
+0.25  Thu Oct 02 22:20:00 CEST 2008 (Stefan Seifert)
+	- Added missing changes and updated documentation to reflect current
+	  status. No code changes.
+
+0.24  Thu Oct 02 22:05:00 CEST 2008 (Stefan Seifert)
+	- fixed many wrong refcounts leading to memory leaks and too early freed
+	  objects. Most notably when returning more than one result from a perl
+	  sub to python.
+	- fixed segfaults in perlSub_getattr and perlSub_setattr for invalid
+	  attribute names on non-methods.
+	- added many testcases for refcounting
+
 0.23  Mon Sep 29 11:50:00 CEST 2008 (Stefan Seifert)
 	- fixed segfault when returing perl objects from python functions and methods
 	- fixed uninitialized member variables of perl subs
