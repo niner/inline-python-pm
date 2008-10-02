@@ -1,4 +1,4 @@
-use Test::Simple tests => 15;
+use Test::Simple tests => 46;
 use strict;
 
 package Fart::Fiddle;
@@ -8,6 +8,7 @@ sub new {
     $class = ref $class if ref $class;
     #print "Creating new ", __PACKAGE__, ": $class\n";
     $::destroyed--;
+#    warn $::destroyed;
     return bless {}, $class;
 }
 
@@ -22,6 +23,32 @@ sub DESTROY {
     my $self = shift;
     #warn "$self destroyed";
     $::destroyed++;
+#    warn $::destroyed;
+}
+
+sub more {
+    my $self = shift;
+    return ( $self->new, $self->new );
+}
+
+sub more_ref {
+    my $self = shift;
+    return [ $self->new, $self->new ];
+}
+
+sub more_hash {
+    my $self = shift;
+    return { a => $self->new, b => $self->new };
+}
+
+sub bark {
+    my $self = shift;
+    return "bark: $self";
+}
+
+sub pass_through {
+    my $self = shift;
+    return @_;
 }
 
 package main;
@@ -53,6 +80,41 @@ def swallow(obj): return
 def call_method(obj):
     return obj.foo()
 
+def call_methods(obj_list):
+    for obj in obj_list:
+        obj.bark()
+
+def give_list(obj):
+    return (obj.new(), obj.new())
+
+def give_hash(obj):
+    return {'a': obj.new(), 'b': obj.new()}
+
+import perl
+def call_more(obj):
+    more = obj.more()
+    perl.ok(len(more) > 0, 'obj.more gave values')
+    for o in more:
+        o.bark()
+
+def call_more_ref(obj):
+    more = obj.more_ref()
+    perl.ok(len(more) > 0, 'obj.more_ref gave values')
+    for o in more:
+        o.bark()
+
+def call_more_hash(obj):
+    obj.more_hash()
+
+def call_method_params(obj, param):
+    perl.ok(obj.pass_through(param) == param, 'got param back from pass_through')
+
+def call_method_param_array(obj):
+    obj.pass_through([obj.new(), obj.new()])
+
+def call_method_param_hash(obj):
+    obj.pass_through({'a': obj.new(), 'b': obj.new()})
+
 def test_exec(code, context):
     exec code
     res = test_func(context)
@@ -64,7 +126,7 @@ END
 
 our $destroyed = 1;
 sub check_destruction {
-    #$destroyed = 1;
+    $destroyed = 1;
     shift->();
     return $destroyed == 1;
 }
@@ -96,14 +158,60 @@ ok(check_destruction(sub { py_call_function('__main__', 'swallow', Fart::Fiddle-
 
 ok(check_destruction(sub { py_call_function('__main__', 'call_method', Fart::Fiddle->new) } ), 'call_method');
 
+ok(check_destruction( sub { py_call_function('__main__', 'swallow', [Fart::Fiddle->new, Fart::Fiddle->new]) } ), 'swallow array ref');
+
+ok(check_destruction( sub { py_call_function('__main__', 'call_methods', [Fart::Fiddle->new, Fart::Fiddle->new]) } ), 'call_methods on array ref');
+
+ok(py_call_function('__main__', 'pass_through', 'foo') eq 'foo', 'simple string pass through');
+ok(py_call_function('__main__', 'pass_through', 10) == 10, 'simple integer pass through');
+
+ok(check_destruction( sub {
+    my $list = py_call_function('__main__', 'give_list', Fart::Fiddle->new);
+    my $foo = "$list"; # just to deref
+    $foo = "@$list";
+} ), 'Python list to perl');
+
+ok(check_destruction( sub {
+    my @list = py_call_function('__main__', 'give_list', Fart::Fiddle->new);
+    my $foo = "@list";
+} ), 'Python list to perl in list context');
+
+ok(check_destruction( sub {
+    my @foo = @{ py_call_function('__main__', 'give_list', Fart::Fiddle->new) };
+    ok(@foo == 2, 'list has two entries');
+    ok($foo[0], 'list value is there');
+} ), 'Python list to perl dereferenced immediately');
+
+ok(check_destruction( sub {
+    my $foo = py_call_function('__main__', 'give_hash', Fart::Fiddle->new);
+    ok(values %$foo == 2, 'hash has entries');
+    ok($foo->{a}, 'hash value is there');
+} ), 'Python dict to perl');
+
+ok(check_destruction( sub {
+    my %foo = %{ py_call_function('__main__', 'give_hash', Fart::Fiddle->new) };
+    ok((values %foo == 2 and $foo{a}), 'hash values seem ok');
+} ), 'Python dict to perl dereferenced immediately');
+
+ok(check_destruction( sub {
+    my $list = py_call_function('__main__', 'pass_through', [Fart::Fiddle->new, Fart::Fiddle->new]);
+    ok(ref $list eq 'ARRAY', 'got array ref back from python');
+    ok((@$list == 2 and $list->[0] and $list->[1]), 'list still contains two elements');
+    $list->[0]->bark();
+} ), 'pass_through of an array ref');
+
+ok(check_destruction( sub {
+    py_call_function('__main__', 'pass_through', [Fart::Fiddle->new, Fart::Fiddle->new]);
+} ), 'pass_through of an array ref');
+
 my $a = py_new_object('A', '__main__', 'A');
-ok($a->isa('Inline::Python::Object'));
+ok($a->isa('Inline::Python::Object'), 'Python object created');
 my $foo = $a->foo();
 ok($foo eq 'foo', 'got foo from Python');
 
 ok(check_destruction( sub {
     $a = py_new_object('A', '__main__', 'A', Fart::Fiddle->new);
-    ok($a->isa('Inline::Python::Object'));
+    ok($a->isa('Inline::Python::Object'), 'Python object created with parameter');
     $foo = $a->obj_foo();
     ok($foo eq 'perl foo', 'got perl foo from Perl via Python');
     $o = $a->obj();
@@ -120,7 +228,22 @@ ok(check_destruction( sub {
 
 $a = py_new_object('A', '__main__', 'A');
 py_call_function('__main__', 'call_method', $a);
-ok(1); # no segfault in previous line
+ok(1, 'no segfault on call_method'); # no segfault in previous line
+
+ok(check_destruction( sub { py_call_function('__main__', 'call_more', Fart::Fiddle->new) } ), 'perl function returns list of objects to python');
+ok(check_destruction( sub { py_call_function('__main__', 'call_more_ref', Fart::Fiddle->new) } ), 'perl function returns array of objects to python');
+ok(check_destruction( sub { py_call_function('__main__', 'call_more_hash', Fart::Fiddle->new) } ), 'perl function returns hash of objects to python');
+
+ok(check_destruction( sub { py_call_function('__main__', 'call_method_params', Fart::Fiddle->new, 'foo') } ), 'perl function with scalar params called from python');
+ok(check_destruction( sub { py_call_function('__main__', 'call_method_params', Fart::Fiddle->new, Fart::Fiddle->new) } ), 'perl function with object params called from python');
+ok(check_destruction( sub { py_call_function('__main__', 'call_method_param_array', Fart::Fiddle->new) } ), 'perl function with param array called from python');
+ok(check_destruction( sub { py_call_function('__main__', 'call_method_param_hash', Fart::Fiddle->new) } ), 'perl function with param hash called from python');
+
+ok(check_destruction( sub {
+    my $obj = py_new_object('A', '__main__', 'A', [Fart::Fiddle->new, Fart::Fiddle->new]);
+    my $list = $obj->obj();
+    ok((@$list == 2 and $list->[0]), 'array values look ok');
+} ), 'method returned array ref');
 
 my $test_func = <<'TEST_FUNC';
 def test_func(context):

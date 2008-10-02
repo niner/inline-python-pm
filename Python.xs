@@ -242,6 +242,8 @@ py_call_function(PYPKG, FNAME, ...)
 
   Printf(("calling Py2Pl\n"));
   ret = Py2Pl(py_retval);
+  if (! sv_isobject(ret))
+      sv_2mortal(ret); // if ret is an object, this already gets done by the following line
   Py_DECREF(py_retval);
   
   if (
@@ -343,6 +345,8 @@ py_call_method(_inst, mname, ...)
 
   Printf(("calling Py2Pl()\n"));
   ret = Py2Pl(py_retval);
+  if (! sv_isobject(ret))
+      sv_2mortal(ret); // if ret is an object, this already gets done by the following line
   Py_DECREF(py_retval);
   
   if (

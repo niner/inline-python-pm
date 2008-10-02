@@ -386,8 +386,10 @@ PerlSub_call(PerlSub_object *self, PyObject *args) {
   if (self->obj) XPUSHs(self->obj);
 
   for (i=0; i<len; i++) {
-    SV *tmp = Py2Pl(PyTuple_GetItem(args, i));
-    XPUSHs(tmp);
+    SV *arg = Py2Pl(PyTuple_GetItem(args, i));
+    XPUSHs(arg);
+    if (! sv_isobject(arg))
+      sv_2mortal(arg);
   }
   PUTBACK;
 
@@ -423,9 +425,11 @@ PerlSub_call(PerlSub_object *self, PyObject *args) {
   else {
     AV *lst = newAV();
     for (i=0; i<count; i++) {
-      av_push(lst, POPs);
+      av_push(lst, SvREFCNT_inc(POPs));
     }
-    retval = Pl2Py((SV*)lst);
+    SV *rv_lst = newRV_inc((SV*)lst);
+    retval = Pl2Py(rv_lst);
+    SvREFCNT_dec(rv_lst);
     sv_2mortal((SV*)lst); /* this will get killed shortly */
   }
 
@@ -504,7 +508,7 @@ PerlSub_setattr(PerlSub_object *self, char *name, PyObject *v) {
   else {
     PyErr_Format(PyExc_AttributeError,
 		 "Attribute '%s' not found for Perl sub '%s'",
-		 name, PyString_AsString(self->pkg));
+		 name, PyString_AsString(self->pkg ? self->pkg : ""));
     return -1;  /* failure */
   }
 }

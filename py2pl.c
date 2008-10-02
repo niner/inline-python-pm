@@ -119,6 +119,7 @@ SV *Py2Pl(PyObject * obj) {
 			PyObject *tmp = PySequence_GetItem(obj, i);	/* new reference */
 			SV *next = Py2Pl(tmp);
 			av_push(retval, next);
+			SvREFCNT_inc(next);
 			Py_DECREF(tmp);
 		}
 		return newRV_noinc((SV *) retval);
@@ -174,6 +175,7 @@ SV *Py2Pl(PyObject * obj) {
 			}
 
 			hv_store(retval, key_val, strlen(key_val), sv_val, 0);
+			SvREFCNT_inc(sv_val);
 			Py_DECREF(key);
 			Py_DECREF(val);
 		}
@@ -235,8 +237,8 @@ PyObject *Pl2Py(SV * obj) {
 			SV *full_pkg = newSVpvf("main::%s::", pkg);
 			PyObject *pkg_py;
 
-			Printf(("A Perl object (%s). Wrapping...\n",
-					SvPV(full_pkg, PL_na)));
+			Printf(("A Perl object (%s, refcnt: %i). Wrapping...\n",
+					SvPV(full_pkg, PL_na), SvREFCNT(obj)));
 
 			pkg_py = PyString_FromString(SvPV(full_pkg, PL_na));
 			o = newPerlObj_object(obj, pkg_py);
@@ -285,7 +287,7 @@ PyObject *Pl2Py(SV * obj) {
 		Printf(("array (%i)\n", len));
 
 		for (i = 0; i < len; i++) {
-			SV *tmp = av_shift(av);
+			SV *tmp = *av_fetch(av, i, 0);
 			PyTuple_SetItem(o, i, Pl2Py(tmp));
 		}
 	}
