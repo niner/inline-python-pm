@@ -86,7 +86,7 @@ PerlPkg_dealloc(PerlPkg_object *self) {
   Py_XDECREF(self->pkg);
   Py_XDECREF(self->base);
   Py_XDECREF(self->full);
-  PyMem_DEL(self);
+  PyObject_Del(self);
 }
 
 static PyObject *
@@ -205,7 +205,7 @@ PerlObj_dealloc(PerlObj_object *self) {
 
   if (self->obj) sv_2mortal(self->obj); // mortal instead of DECREF. Object might be return value
 
-  PyMem_DEL(self);
+  PyObject_Del(self);
 }
 
 static PyObject *
@@ -364,7 +364,7 @@ PerlSub_dealloc(PerlSub_object *self) {
   if (self->obj) SvREFCNT_dec(self->obj);
   if (self->ref) SvREFCNT_dec(self->ref);
 
-  PyMem_DEL(self);
+  PyObject_Del(self);
 }
 
 static PyObject *
@@ -502,13 +502,13 @@ PerlSub_setattr(PerlSub_object *self, char *name, PyObject *v) {
   else if (strcmp(name,"flags")==0) {
     PyErr_Format(PyExc_TypeError,
 		 "'flags' can only be set from an integer. '%s'",
-		 name, PyString_AsString(self->pkg));
+		 (self->pkg ? PyString_AsString(self->pkg) : ""));
     return -1;  /* failure */
   }
   else {
     PyErr_Format(PyExc_AttributeError,
 		 "Attribute '%s' not found for Perl sub '%s'",
-		 name, PyString_AsString(self->pkg ? self->pkg : ""));
+		 name, (self->pkg ? PyString_AsString(self->pkg) : ""));
     return -1;  /* failure */
   }
 }

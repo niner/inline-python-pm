@@ -32,6 +32,9 @@ This module requires Inline.pm version 0.43 or higher to be installed. In
 addition, you need Python 1.5.2 or greater installed. Python 2.0 or greater
 is recommended.
 
+Python has to be configured with --enable-shared. Linux distribution packages
+should be fine, but keep it in mind if you compile Python yourself.
+
 To install Inline::Python do this:
 
 perl Makefile.PL

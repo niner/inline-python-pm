@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.26  Mon Nov 10 13:20:00 CEST 2008 (Stefan Seifert)
+	- Fixed compatibility with Python 2.5: all tests run successfully.
+	- Documented the --enable-shared requirement
+
 0.25  Thu Oct 02 22:20:00 CEST 2008 (Stefan Seifert)
 	- Added missing changes and updated documentation to reflect current
 	  status. No code changes.
