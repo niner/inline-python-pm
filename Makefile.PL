@@ -41,6 +41,7 @@ print "Using $sel->{path}\n";
 interrogate($sel);
 
 # Fix up the libpath and libpython
+die "Could not find Python.h in include path. make will not work" unless -e "$sel->{incpath}/Python.h";
 substr($sel->{incpath}, 0, 0) = "-I";
 substr($sel->{libpath}, 0, 0) = "-L";
 $sel->{libpython} =~ s/lib(.*)(?:\.\Q$Config{dlext}\E|\Q$Config{_a}\E)/-l$1/;

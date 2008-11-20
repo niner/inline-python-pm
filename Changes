@@ -1,5 +1,11 @@
 Revision history for Perl extension Inline::Python.
 
+0.27  Thu Nov 20 19:00:00 CEST 2008 (Stefan Seifert)
+	- Fixed a segfault in py2pl.c when converting Unicode strings from Python to
+	  Perl.
+	- Attempt to check for Python.h in Makefile.pl to make it more visible to
+	  the user.
+
 0.26  Mon Nov 10 13:20:00 CEST 2008 (Stefan Seifert)
 	- Fixed compatibility with Python 2.5: all tests run successfully.
 	- Documented the --enable-shared requirement

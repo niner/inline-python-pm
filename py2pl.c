@@ -23,6 +23,7 @@ SV *Py2Pl(PyObject * obj) {
 	/* elw: see what python says things are */
 	PyObject *this_type = PyObject_Type(obj);
 	PyObject *t_string = PyObject_Str(this_type);
+	int is_string = PyString_Check(obj) || PyUnicode_Check(obj);
 	char *type_str = PyString_AsString(t_string);
 	Printf(("type is %s\n", type_str));
 #ifdef I_PY_DEBUG
@@ -31,7 +32,7 @@ SV *Py2Pl(PyObject * obj) {
 	printf("\ntype:\n\t");
 	PyObject_Print(this_type, stdout, Py_PRINT_RAW);
 	printf("\n");
-	Printf(("String check:   %i\n", PyString_Check(obj)));
+	Printf(("String check:   %i\n", is_string));
 	Printf(("Number check:   %i\n", PyNumber_Check(obj)));
 	Printf(("Int check:      %i\n", PyInt_Check(obj)));
 	Printf(("Long check:     %i\n", PyLong_Check(obj)));
@@ -108,7 +109,7 @@ SV *Py2Pl(PyObject * obj) {
 	}
 
 	/* a tuple or a list */
-	else if (PySequence_Check(obj) && !PyString_Check(obj)) {
+	else if (PySequence_Check(obj) && !is_string) {
 		AV *retval = newAV();
 		int i;
 		int sz = PySequence_Length(obj);
@@ -127,7 +128,7 @@ SV *Py2Pl(PyObject * obj) {
 
 	/* a dictionary or fake Mapping object */
 	/* elw: PyMapping_Check() now returns true for strings */
-	else if (! PyString_Check(obj) && PyMapping_Check(obj)) {
+	else if (! is_string && PyMapping_Check(obj)) {
 		HV *retval = newHV();
 		int i;
 		int sz = PyMapping_Length(obj);
