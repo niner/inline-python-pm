@@ -252,6 +252,23 @@ say C<perl.f>, which goes into the __getattr__() method. We check the Perl
 namespace and see a function called f, which we return, wrapped in an 
 instance of the PerlSub type.
 
+=head3 Accessing a perl object's data
+
+__getattr__ may also be used to access a Perl object's attributes, just like
+Python allows. The Perl object just has to implement a sub __getattr__
+returning the requested attribute, which may even be calculated on the fly.
+
+An example for the common hash based objects:
+
+   sub __getattr__ {
+       my ($self, $attr) = @_;
+       return $self->{$attr}; 
+   }
+
+This allows Python code to access the perl object's data like:
+
+   print my_perl_object.field_name
+
 =head1 Using the PerlSub Type
 
 All Perl subs are wrapped in the PerlSub type, so that they can emulate Python

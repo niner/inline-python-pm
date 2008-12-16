@@ -1,5 +1,18 @@
 Revision history for Perl extension Inline::Python.
 
+0.28  Tue Dec 16 19:00:00 CEST 2008 (Stefan SeiferT)
+	- Fixed pushing integers from Python to Perl space. They now retain their
+	  integer-ness instead of silently converting them to strings.
+	- PerlObj objects now have a comparison function which asserts if the _same_
+	  perl object is contained.
+	- implemented Python's __getattr__ protocol for perl objects. Attributes can
+	  now be accessed with my_perl_object.my_attribute same as Python objects.
+	  The perl object just has to implement a __getattr__ sub.
+	- __getattr__ now raises a KeyError if a PerlObj object does not have the
+	  requested attribute instead of silently assuming that a method is being
+	  called.
+	- Added testcases for all these and for the Unicode fix in 0.27
+
 0.27  Thu Nov 20 19:00:00 CEST 2008 (Stefan Seifert)
 	- Fixed a segfault in py2pl.c when converting Unicode strings from Python to
 	  Perl.

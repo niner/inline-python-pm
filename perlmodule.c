@@ -223,6 +223,7 @@ PerlObj_repr(PerlObj_object *self, PyObject *args) {
 
 static PyObject *
 PerlObj_getattr(PerlObj_object *self, char *name) {
+  PyObject *retval = NULL;
   if (strcmp(name,"__methods__") == 0) {
     return get_perl_pkg_subs(self->pkg);
   }
@@ -235,10 +236,62 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
     return retval ? retval : NULL;
   }
   else {
-    /* probably a request for a method */
-    PyObject *tmp = PyString_FromString(name);
-    return newPerlMethod_object(self->pkg, tmp, self->obj);
+    /* search for an attribute */
+    // check if the object supports the __getattr__ protocol
+    SV *obj = (SV*)SvRV(self->obj);
+    HV* pkg = SvSTASH(obj);
+    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getattr__", FALSE);
+    if (gv && isGV(gv)) { // __getattr__ supported! Let's see if an attribute is found.
+      dSP;
+
+      ENTER;
+      SAVETMPS;
+
+      SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+
+      PUSHMARK(SP);
+      XPUSHs(self->obj);
+      XPUSHs(sv_2mortal(newSVpv(name, 0)));
+      PUTBACK;
+
+      /* array context needed, so it's possible to return nothing (not even undef)
+         if the attribute does not exist */
+      int count = call_sv(rv, G_ARRAY);
+
+      SPAGAIN;
+
+      if (count > 1)
+        croak("__getattr__ may only return a single scalar or an empty list!\n");
+
+      if (count == 1) { // attribute exists! Now give the value back to Python
+        retval = Pl2Py(POPs);
+      }
+
+      FREETMPS;
+      LEAVE;
+    }
+    if (! retval) {
+      /* probably a request for a method */
+      GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
+      if (gv && isGV(gv)) {
+        PyObject *py_name = PyString_FromString(name);
+        retval = newPerlMethod_object(self->pkg, py_name, self->obj);
+      }
+      else { // give up and raise a KeyError
+        char attribute_error[strlen(name) + 21];
+        sprintf(attribute_error, "attribute %s not found", name);
+        PyErr_SetString(PyExc_KeyError, attribute_error);
+      }
+    }
+    return retval;
   }
+}
+
+static int
+PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
+  if (SvRV(o1->obj) == SvRV(o2->obj)) // just compare the dereferenced object pointers
+    return 0;
+  return 1;
 }
 
 static struct PyMethodDef PerlObj_methods[] = {
@@ -262,7 +315,7 @@ DL_EXPORT(PyTypeObject) PerlObj_type = {
   (printfunc)0,                 /*tp_print*/
   (getattrfunc)PerlObj_getattr, /*tp_getattr*/
   (setattrfunc)0,               /*tp_setattr*/
-  (cmpfunc)0,                   /*tp_compare*/
+  (cmpfunc)PerlObj_compare,     /*tp_compare*/
   (reprfunc)PerlObj_repr,       /*tp_repr*/
   0,                            /*tp_as_number*/
   0,                            /*tp_as_sequence*/
@@ -486,8 +539,11 @@ PerlSub_getattr(PerlSub_object *self, char *name) {
   }
   else {
     PyErr_Format(PyExc_AttributeError,
-		 "Attribute '%s' not found for Perl sub '%s'",
-		 name, self->pkg ? PyString_AsString(self->pkg) : "");
+		 "Attribute '%s' not found for Perl sub '%s'", name,
+		 (self->full
+		 	? PyString_AsString(self->full)
+			: (self->pkg ? PyString_AsString(self->pkg) : ""))
+		);
     retval = NULL;
   }
   return retval;
@@ -507,8 +563,11 @@ PerlSub_setattr(PerlSub_object *self, char *name, PyObject *v) {
   }
   else {
     PyErr_Format(PyExc_AttributeError,
-		 "Attribute '%s' not found for Perl sub '%s'",
-		 name, (self->pkg ? PyString_AsString(self->pkg) : ""));
+		 "Attribute '%s' not found for Perl sub '%s'", name,
+		 (self->full
+		 	? PyString_AsString(self->full)
+			: (self->pkg ? PyString_AsString(self->pkg) : ""))
+		);
     return -1;  /* failure */
   }
 }

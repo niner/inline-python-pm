@@ -185,6 +185,13 @@ SV *Py2Pl(PyObject * obj) {
 		return newRV_noinc((SV *) retval);
 	}
 
+	/* an int */
+	else if (PyInt_Check(obj)) {
+		SV *sv = newSViv(PyInt_AsLong(obj));
+		Printf(("Py2Pl: integer\n"));
+		return sv;
+	}
+
 	/* a string (or number) */
 	else {
 		PyObject *string = PyObject_Str(obj);	/* new reference */
