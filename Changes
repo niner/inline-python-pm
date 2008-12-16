@@ -1,6 +1,6 @@
 Revision history for Perl extension Inline::Python.
 
-0.28  Tue Dec 16 19:00:00 CEST 2008 (Stefan SeiferT)
+0.28  Tue Dec 16 19:00:00 CET 2008 (Stefan Seifert)
 	- Fixed pushing integers from Python to Perl space. They now retain their
 	  integer-ness instead of silently converting them to strings.
 	- PerlObj objects now have a comparison function which asserts if the _same_
@@ -13,13 +13,13 @@ Revision history for Perl extension Inline::Python.
 	  called.
 	- Added testcases for all these and for the Unicode fix in 0.27
 
-0.27  Thu Nov 20 19:00:00 CEST 2008 (Stefan Seifert)
+0.27  Thu Nov 20 19:00:00 CET 2008 (Stefan Seifert)
 	- Fixed a segfault in py2pl.c when converting Unicode strings from Python to
 	  Perl.
 	- Attempt to check for Python.h in Makefile.pl to make it more visible to
 	  the user.
 
-0.26  Mon Nov 10 13:20:00 CEST 2008 (Stefan Seifert)
+0.26  Mon Nov 10 13:20:00 CET 2008 (Stefan Seifert)
 	- Fixed compatibility with Python 2.5: all tests run successfully.
 	- Documented the --enable-shared requirement
 
