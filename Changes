@@ -1,5 +1,12 @@
 Revision history for Perl extension Inline::Python.
 
+0.29  Tue Jul 07 17:00:00 CET 2009 (Stefan Seifert)
+	- Implemented passing of subroutine references and lambda expressions from
+	  Python to Perl space.
+	- Implemented Python's __getitem__ protocol for perl objects. Perl objects
+	  can thus be used like dictionaries if they support a __getitem__ sub.
+	- Fixed a bug in Pl2Py sometimes segfaulting on undefs in arrays.
+
 0.28  Tue Dec 16 19:00:00 CET 2008 (Stefan Seifert)
 	- Fixed pushing integers from Python to Perl space. They now retain their
 	  integer-ness instead of silently converting them to strings.
