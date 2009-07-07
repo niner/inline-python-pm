@@ -34,6 +34,7 @@ DL_EXPORT(PyObject *) newPerlObj_object(SV *obj, PyObject *pkg);
 staticforward void       PerlObj_dealloc(PerlObj_object *self);
 staticforward PyObject * PerlObj_repr(PerlObj_object *self, PyObject *args);
 staticforward PyObject * PerlObj_getattr(PerlObj_object *self, char *name);
+staticforward PyObject * PerlObj_mp_subscript(PerlObj_object *self, PyObject *key);
 
 DL_EXPORT(PyObject *) newPerlSub_object(PyObject *base,
 					PyObject *pkg,
@@ -287,6 +288,52 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
   }
 }
 
+static PyObject*
+PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
+  // check if the object supports the __getattr__ protocol
+  char *name = PyString_AsString(PyObject_Str(key));
+  SV *obj = (SV*)SvRV(self->obj);
+  HV* pkg = SvSTASH(obj);
+  GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getitem__", FALSE);
+  if (gv && isGV(gv)) { // __getitem__ supported! Let's see if the key is found.
+    dSP;
+
+    ENTER;
+    SAVETMPS;
+
+    SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+
+    PUSHMARK(SP);
+    XPUSHs(self->obj);
+    XPUSHs(sv_2mortal(newSVpv(name, 0)));
+    PUTBACK;
+
+    /* array context needed, so it's possible to return nothing (not even undef)
+       if the attribute does not exist */
+    int count = call_sv(rv, G_ARRAY);
+
+    SPAGAIN;
+
+    if (count > 1)
+      croak("__getitem__ may only return a single scalar or an empty list!\n");
+
+    if (count == 1) { // item exists! Now give the value back to Python
+      return Pl2Py(POPs);
+    }
+
+    FREETMPS;
+    LEAVE;
+
+    char attribute_error[strlen(name) + 21];
+    sprintf(attribute_error, "attribute %s not found", name);
+    PyErr_SetString(PyExc_KeyError, attribute_error);
+  }
+  else {
+    PyErr_Format(PyExc_TypeError, "'%.200s' object is unsubscriptable", self->ob_type->tp_name);
+  }
+  return NULL;
+}
+
 static int
 PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
   if (SvRV(o1->obj) == SvRV(o2->obj)) // just compare the dereferenced object pointers
@@ -302,6 +349,12 @@ static struct PyMethodDef PerlObj_methods[] = {
 static char PerlObj_type__doc__[] = 
 "_perl_obj -- Wrap a Perl object in a Python class"
 ;
+
+PyMappingMethods mp_methods = {
+  (lenfunc) 0,                       /*mp_length*/
+  (binaryfunc) PerlObj_mp_subscript, /*mp_subscript*/
+  (objobjargproc) 0,                 /*mp_ass_subscript*/
+};
 
 /* type definition */
 DL_EXPORT(PyTypeObject) PerlObj_type = {
@@ -319,7 +372,7 @@ DL_EXPORT(PyTypeObject) PerlObj_type = {
   (reprfunc)PerlObj_repr,       /*tp_repr*/
   0,                            /*tp_as_number*/
   0,                            /*tp_as_sequence*/
-  0,                            /*tp_as_mapping*/
+  &mp_methods,                  /*tp_as_mapping*/
   (hashfunc)0,                  /*tp_hash*/
   (ternaryfunc)0,               /*tp_call*/
   (reprfunc)PerlObj_repr,       /*tp_str*/

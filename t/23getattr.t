@@ -37,14 +37,13 @@ def test_attrs(foo):
     perl.ok(foo.__getattr__('test') == 'Attrs test!')
 
 def test_noattrs(bar):
-    perl.warn(bar.test)
+    try:
+        perl.warn(bar.test)
+    except KeyError:
+        return 1
+    return 0
 
 END
 
 ok(py_call_function("__main__", "test_attrs", Attrs->new), undef);
-
-warn "\nThis test must throw a Python KeyError error!";
-eval {
-    py_call_function("__main__", "test_noattrs", NoAttrs->new);
-};
-ok($@ eq "Error -- PyObject_CallObject(...) failed.\n");
+ok(py_call_function("__main__", "test_noattrs", NoAttrs->new) == 1);

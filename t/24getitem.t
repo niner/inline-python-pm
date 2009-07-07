@@ -1,22 +1,22 @@
-package Attrs;
+package Items;
 
 sub new {
     return bless {
-        test => 'Attrs test!',
+        test => 'Items test!',
     };
 }
 
-sub __getattr__ {
-    my ($self, $attr) = @_;
-    return unless exists $self->{$attr};
-    return $self->{$attr};
+sub __getitem__ {
+    my ($self, $item) = @_;
+    return unless exists $self->{$item};
+    return $self->{$item};
 }
 
-package NoAttrs;
+package NoItems;
 
 sub new {
     return bless {
-        test => 'NoAttrs test!',
+        test => 'NoItems test!',
     };
 }
 
@@ -32,18 +32,17 @@ use Inline::Python qw(py_eval py_call_function);
 
 py_eval(<<'END');
 
-def test_attrs(foo):
-    perl.ok(foo['test'] == 'Attrs test!')
+def test_items(foo):
+    perl.ok(foo['test'] == 'Items test!')
 
-def test_noattrs(bar):
-    perl.warn(bar['test'])
+def test_noitems(bar):
+    try:
+        bar['test']
+    except TypeError:
+        return 1
+    return 0
 
 END
 
-ok(py_call_function("__main__", "test_attrs", Attrs->new), undef);
-
-warn "\nThis test must throw a Python KeyError error!";
-eval {
-    py_call_function("__main__", "test_noattrs", NoAttrs->new);
-};
-ok($@ eq "Error -- PyObject_CallObject(...) failed.\n");
+ok(py_call_function("__main__", "test_items", Items->new), undef);
+ok(py_call_function("__main__", "test_noitems", NoItems->new) == 1);
