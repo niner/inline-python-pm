@@ -329,4 +329,13 @@ sub AUTOLOAD {
 sub DESTROY {
 }
 
+package Inline::Python::Function;
+
+use overload '&{}' => \&call, fallback => 1;
+
+sub call {
+    my $self = shift;
+    return sub { Inline::Python::py_call_function_ref($$self, @_) };
+}
+
 1;

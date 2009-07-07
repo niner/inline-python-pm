@@ -192,6 +192,32 @@ SV *Py2Pl(PyObject * obj) {
 		return sv;
 	}
 
+	/* a function or method */
+	else if (PyFunction_Check(obj)) {
+		SV *inst_ptr = newSViv(0);
+		SV *inst;
+		MAGIC *mg;
+		_inline_magic priv;
+
+		inst = newSVrv(inst_ptr, "Inline::Python::Function");
+
+		/* set up magic */
+		priv.key = INLINE_MAGIC_KEY;
+		sv_magic(inst, inst, '~', (char *) &priv, sizeof(priv));
+		mg = mg_find(inst, '~');
+		mg->mg_virtual = (MGVTBL *) malloc(sizeof(MGVTBL));
+		mg->mg_virtual->svt_free = free_inline_py_obj;
+
+		sv_setiv(inst, (IV) obj);
+		/*SvREADONLY_on(inst); *//* to uncomment this means I can't
+			re-bless it */
+		Py_INCREF(obj);
+		Printf(("Py2Pl: Instance. Obj: %p, inst_ptr: %p\n", obj, inst_ptr));
+
+		sv_2mortal(inst_ptr);
+		return inst_ptr;
+	}
+
 	/* a string (or number) */
 	else {
 		PyObject *string = PyObject_Str(obj);	/* new reference */
@@ -295,8 +321,16 @@ PyObject *Pl2Py(SV * obj) {
 		Printf(("array (%i)\n", len));
 
 		for (i = 0; i < len; i++) {
-			SV *tmp = *av_fetch(av, i, 0);
-			PyTuple_SetItem(o, i, Pl2Py(tmp));
+			SV **tmp = av_fetch(av, i, 0);
+			if (tmp) {
+				PyObject *tmp_py = Pl2Py(*tmp);
+				PyTuple_SetItem(o, i, tmp_py);
+			}
+			else {
+				Printf(("Got a NULL from av_fetch for element %i. Might be a bug!", i));
+				Py_INCREF(Py_None);
+				PyTuple_SetItem(o, i, Py_None);
+			}
 		}
 	}
 	/* A hash */
@@ -329,6 +363,7 @@ PyObject *Pl2Py(SV * obj) {
 	}
 
 	else {
+		Printf(("undef -> None\n"));
 		o = Py_None;
 		Py_INCREF(Py_None);
 	}

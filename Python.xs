@@ -262,6 +262,91 @@ py_call_function(PYPKG, FNAME, ...)
   }
 
 #undef  NUM_FIXED_ARGS
+#define NUM_FIXED_ARGS 1
+
+void
+py_call_function_ref(FUNC, ...)
+     SV *FUNC;
+  PREINIT:
+  int i;
+
+  PyObject *func = (PyObject *) SvIV(FUNC);
+  PyObject *o         = NULL;
+  PyObject *py_retval = NULL;
+  PyObject *tuple     = NULL;
+
+  SV* ret = NULL;
+
+  PPCODE:
+
+  Printf(("py_call_function_ref\n"));
+
+  if (!PyCallable_Check(func)) {
+    croak("'%p' is not a callable object", func);
+    XSRETURN_EMPTY;
+  }
+
+  Printf(("function '%p' is callable!\n", func));
+  
+  tuple = PyTuple_New(items-NUM_FIXED_ARGS);
+  
+  for (i=NUM_FIXED_ARGS; i<items; i++) {
+    o = Pl2Py(ST(i));
+    if (o) {
+      PyTuple_SetItem(tuple, i-NUM_FIXED_ARGS, o);
+    }
+  }
+  Printf(("calling func\n"));
+  py_retval = PyObject_CallObject(func, tuple);
+  Py_DECREF(tuple);
+  Printf(("received a response\n"));
+  if (!py_retval || (PyErr_Occurred() != NULL)) {
+    fprintf(stderr,"Error: Python error occurred:\n");
+    PyErr_Print();
+    croak("Error -- PyObject_CallObject(...) failed.\n");
+    XSRETURN_EMPTY;
+  }
+  Printf(("no error\n"));
+#ifdef CHECK_CONTEXT
+  Printf(("GIMME_V=%i\n", GIMME_V));
+  Printf(("GIMME=%i\n", GIMME));
+  Printf(("G_VOID=%i\n", G_VOID));
+  Printf(("G_ARRAY=%i\n", G_ARRAY));
+  Printf(("G_SCALAR=%i\n", G_SCALAR));
+
+  /* We can save a little time by checking our context */
+  /* For whatever reason, GIMME_V always returns G_VOID when we get forwarded
+   * from eval_python(). 
+   */
+  if (GIMME_V == G_VOID) {
+    Py_DECREF(py_retval);
+    XSRETURN_EMPTY;
+  }
+#endif
+
+  Printf(("calling Py2Pl\n"));
+  ret = Py2Pl(py_retval);
+  if (! sv_isobject(ret))
+      sv_2mortal(ret); // if ret is an object, this already gets done by the following line
+  Py_DECREF(py_retval);
+  
+  if (
+#ifdef CHECK_CONTEXT
+      (GIMME_V == G_ARRAY) &&
+#endif
+      SvROK(ret) && (SvTYPE(SvRV(ret)) == SVt_PVAV)) {
+    AV* av = (AV*)SvRV(ret);
+    int len = av_len(av) + 1;
+    int i;
+    for (i=0; i<len; i++) {
+      XPUSHs(sv_2mortal(av_shift(av)));
+    }
+  } else {
+    XPUSHs(ret);
+  }
+
+
+#undef  NUM_FIXED_ARGS
 #define NUM_FIXED_ARGS 2
 
 void
