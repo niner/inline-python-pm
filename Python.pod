@@ -36,6 +36,7 @@ Version 0.21 provides the ability to bind to 'new-style' classes (as
 defined by the python PEP's 252 and 253.)  See L<New-Style Classes> for
 details.
 
+See the L<Changes> file for new features in recent versions.
 
 =head1 Using the Inline::Python Module
 
@@ -619,17 +620,6 @@ On my machine, %namespace looks something like this:
 Each result can be fed to py_bind_function() and py_bind_class(), which is 
 exactly what Inline::Python itself does.
 
-=head1 SUPPORTED PLATFORMS
-
-This is an ALPHA release of Inline::Python. Further testing and
-expanded support for other operating systems and platforms will be a
-focus for future releases. It has been tested on RedHat Linux 6.2 with
-a variety of different Perl and Python configurations. It also seems to be
-running pretty well on openSUSE 10.3 and 11.0. Previous versions of
-Inline::Python working on Windows and Cygwin -- this version has never been
-tested there. I strongly suspect it will require patching. Please send me
-patches.
-
 =head1 SEE ALSO 
 
 For information about using C<Inline>, see L<Inline>.
@@ -641,6 +631,11 @@ Inline::Python's mailing list is inline@perl.org
 To subscribe, send email to inline-subscribe@perl.org
 
 =head1 BUGS AND DEFICIENCIES
+
+This is a BETA quality release of Inline::Python. It is fairly feature complete
+and runs stable with only known crasher bugs on throwing unhandled exceptions in
+Python code. Further testing and expanded support for other operating systems
+and platforms will be a focus for future releases.
 
 When reporting a bug, please do the following:
 
@@ -689,6 +684,15 @@ I am very interested in reports of segfaults, leaks other than the ones
 described and of course testcases.
 
 =back
+
+=head1 SUPPORTED PLATFORMS
+
+Inline::Python has been tested on RedHat Linux 6.2 with a variety of different
+Perl and Python configurations. It also seems to be running pretty well on
+openSUSE at least from 10.3 to 11.2 and on Solaris.  Previous versions of
+Inline::Python working on Windows and Cygwin -- this version has never been
+tested there. I strongly suspect it will require patching. Please send me
+patches.
 
 =head1 AUTHOR
 
