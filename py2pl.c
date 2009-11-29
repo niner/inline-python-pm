@@ -316,7 +316,7 @@ PyObject *Pl2Py(SV * obj) {
 		AV *av = (AV *) SvRV(obj);
 		int i;
 		int len = av_len(av) + 1;
-		o = PyTuple_New(len);
+		o = PyList_New(len);
 
 		Printf(("array (%i)\n", len));
 
@@ -324,12 +324,12 @@ PyObject *Pl2Py(SV * obj) {
 			SV **tmp = av_fetch(av, i, 0);
 			if (tmp) {
 				PyObject *tmp_py = Pl2Py(*tmp);
-				PyTuple_SetItem(o, i, tmp_py);
+				PyList_SetItem(o, i, tmp_py);
 			}
 			else {
 				Printf(("Got a NULL from av_fetch for element %i. Might be a bug!", i));
 				Py_INCREF(Py_None);
-				PyTuple_SetItem(o, i, Py_None);
+				PyList_SetItem(o, i, Py_None);
 			}
 		}
 	}

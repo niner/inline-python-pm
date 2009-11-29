@@ -13,4 +13,4 @@ my @a = ('foo' , 'bar', 'baz');
 delete $a[1];
 
 ok(debug(undef) eq 'None');
-ok(debug(\@a) eq "('foo', None, 'baz')");
+ok(debug(\@a) eq "['foo', None, 'baz']");
