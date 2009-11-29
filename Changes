@@ -1,6 +1,10 @@
 Revision history for Perl extension Inline::Python.
 
-0.29  Tue Jul 07 17:00:00 CET 2009 (Stefan Seifert)
+0.30  Sun Nov 29 19:45:00 CET 2009 (Stefan Seifert)
+	- Convert Perl arrays to Python arrays instead of tuples
+	- First look for methods before looking for attributes in PerlObj_getattr
+
+0.29  Tue Jul 07 17:00:00 CEST 2009 (Stefan Seifert)
 	- Implemented passing of subroutine references and lambda expressions from
 	  Python to Perl space.
 	- Implemented Python's __getitem__ protocol for perl objects. Perl objects

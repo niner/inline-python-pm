@@ -26,13 +26,15 @@ use Test;
 use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
-BEGIN { plan tests => 4 }
+BEGIN { plan tests => 6 }
 
 use Inline::Python qw(py_eval py_call_function);
 
 py_eval(<<'END');
 
 def test_attrs(foo):
+    perl.ok(hasattr(foo, 'test'))
+    perl.ok(not hasattr(foo, 'foo'))
     perl.ok(foo.test == 'Attrs test!')
     perl.ok(foo.__getattr__('test') == 'Attrs test!')
 
