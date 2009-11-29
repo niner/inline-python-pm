@@ -237,48 +237,48 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
     return retval ? retval : NULL;
   }
   else {
-    /* search for an attribute */
-    // check if the object supports the __getattr__ protocol
     SV *obj = (SV*)SvRV(self->obj);
     HV* pkg = SvSTASH(obj);
-    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getattr__", FALSE);
-    if (gv && isGV(gv)) { // __getattr__ supported! Let's see if an attribute is found.
-      dSP;
-
-      ENTER;
-      SAVETMPS;
-
-      SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
-
-      PUSHMARK(SP);
-      XPUSHs(self->obj);
-      XPUSHs(sv_2mortal(newSVpv(name, 0)));
-      PUTBACK;
-
-      /* array context needed, so it's possible to return nothing (not even undef)
-         if the attribute does not exist */
-      int count = call_sv(rv, G_ARRAY);
-
-      SPAGAIN;
-
-      if (count > 1)
-        croak("__getattr__ may only return a single scalar or an empty list!\n");
-
-      if (count == 1) { // attribute exists! Now give the value back to Python
-        retval = Pl2Py(POPs);
-      }
-
-      FREETMPS;
-      LEAVE;
+    /* probably a request for a method */
+    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
+    if (gv && isGV(gv)) {
+      PyObject *py_name = PyString_FromString(name);
+      retval = newPerlMethod_object(self->pkg, py_name, self->obj);
     }
-    if (! retval) {
-      /* probably a request for a method */
-      GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
-      if (gv && isGV(gv)) {
-        PyObject *py_name = PyString_FromString(name);
-        retval = newPerlMethod_object(self->pkg, py_name, self->obj);
+    else {
+      /* search for an attribute */
+      // check if the object supports the __getattr__ protocol
+      GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getattr__", FALSE);
+      if (gv && isGV(gv)) { // __getattr__ supported! Let's see if an attribute is found.
+	dSP;
+
+	ENTER;
+	SAVETMPS;
+
+	SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+
+	PUSHMARK(SP);
+	XPUSHs(self->obj);
+	XPUSHs(sv_2mortal(newSVpv(name, 0)));
+	PUTBACK;
+
+	/* array context needed, so it's possible to return nothing (not even undef)
+	   if the attribute does not exist */
+	int count = call_sv(rv, G_ARRAY);
+
+	SPAGAIN;
+
+	if (count > 1)
+	  croak("__getattr__ may only return a single scalar or an empty list!\n");
+
+	if (count == 1) { // attribute exists! Now give the value back to Python
+	  retval = Pl2Py(POPs);
+	}
+
+	FREETMPS;
+	LEAVE;
       }
-      else { // give up and raise a KeyError
+      if (! retval) { // give up and raise a KeyError
         char attribute_error[strlen(name) + 21];
         sprintf(attribute_error, "attribute %s not found", name);
         PyErr_SetString(PyExc_KeyError, attribute_error);
