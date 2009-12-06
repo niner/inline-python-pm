@@ -633,9 +633,8 @@ To subscribe, send email to inline-subscribe@perl.org
 =head1 BUGS AND DEFICIENCIES
 
 This is a BETA quality release of Inline::Python. It is fairly feature complete
-and runs stable with only known crasher bugs on throwing unhandled exceptions in
-Python code. Further testing and expanded support for other operating systems
-and platforms will be a focus for future releases.
+and runs stable with no known crasher bugs. Further testing and expanded support
+for other operating systems and platforms will be a focus for future releases.
 
 When reporting a bug, please do the following:
 
@@ -676,9 +675,8 @@ Inline::Python is known to leak memory. Version 0.24 fixes most of these leaks,
 but it's still not completely clean and I have no idea where the remaining
 leaks would be.
 
-There are also quite a few segfaults on errors happening in Python space. If
-these happen for you, try catching exceptions with try/except, before they
-reach Perl.
+There my also be segfaults on errors happening in Python space. If these happen
+for you, try catching exceptions with try/except, before they reach Perl.
 
 I am very interested in reports of segfaults, leaks other than the ones
 described and of course testcases.
