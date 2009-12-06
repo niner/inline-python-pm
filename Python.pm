@@ -323,7 +323,8 @@ sub new {
 sub __data__ {
     my ($self) = @_;
 
-    return Inline::Python::py_get_object_data($self);
+    tie my %data, 'Inline::Python::Object::Data', $self;
+    return \%data;
 }
 
 sub AUTOLOAD {
@@ -335,6 +336,30 @@ sub AUTOLOAD {
 
 # avoid AUTOLOAD warning
 sub DESTROY {
+}
+
+package Inline::Python::Object::Data;
+
+sub new {
+    my $class = shift;
+    return $class->TIEHASH(@_);
+}
+
+sub TIEHASH {
+    my ($class, $self) = @_;
+    return bless \$self, $class;
+}
+
+sub FETCH {
+    my ($self, $key) = @_;
+
+    return Inline::Python::py_get_attr($$self, $key);
+}
+
+sub STORE {
+    my ($self, $key, $value) = @_;
+
+    return Inline::Python::py_set_attr($$self, $key, $value);
 }
 
 package Inline::Python::Function;
