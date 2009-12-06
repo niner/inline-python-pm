@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.31  Sun Dec 06 15:30:00 CET 2009 (Stefan Seifert)
+	- Implement access to Inline::Python::Object data
+
 0.30  Sun Nov 29 19:45:00 CET 2009 (Stefan Seifert)
 	- Convert Perl arrays to Python arrays instead of tuples
 	- First look for methods before looking for attributes in PerlObj_getattr
