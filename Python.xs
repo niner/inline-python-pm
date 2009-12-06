@@ -1,4 +1,5 @@
 /* -*- C -*- */
+/* vim: set shiftwidth=2 softtabstop=2: */
 #include "EXTERN.h" 
 #include "perl.h"
 #include "XSUB.h"
@@ -449,4 +450,39 @@ py_call_method(_inst, mname, ...)
   } else {
     XPUSHs(ret);
   }
+
+#undef  NUM_FIXED_ARGS
+#define NUM_FIXED_ARGS 2
+
+void
+py_get_object_data(_inst)
+  SV*	_inst;
+  PREINIT:
+
+  PyObject *inst;
+  PyObject *py_retval; /* the return value */
+  SV *ret;
+
+  PPCODE:
+
+  Printf(("get_object_data\n"));
+
+  if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
+    inst = (PyObject*)SvIV(SvRV(_inst));
+  }
+  else {
+    croak("Object did not have Inline::Python::Object magic");
+    XSRETURN_EMPTY;
+  }
+
+  Printf(("inst {%p} successfully passed the PVMG test\n", inst));
+
+  py_retval = PyObject_GetAttrString(inst, "__dict__");
+
+  Printf(("calling Py2Pl()\n"));
+  ret = Py2Pl(py_retval);
+  sv_2mortal(ret);
+  Py_DECREF(py_retval);
+  
+  XPUSHs(ret);
 

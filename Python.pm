@@ -313,9 +313,17 @@ sub py_new_object {
 #==============================================================================
 package Inline::Python::Object;
 
+use overload '%{}' => \&__data__, fallback => 1;
+
 sub new {
     my $perlpkg = shift;
     return bless &Inline::Python::py_call_function, $perlpkg;
+}
+
+sub __data__ {
+    my ($self) = @_;
+
+    return Inline::Python::py_get_object_data($self);
 }
 
 sub AUTOLOAD {
