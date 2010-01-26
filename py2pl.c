@@ -218,6 +218,20 @@ SV *Py2Pl(PyObject * obj) {
 		return inst_ptr;
 	}
 
+	else if (PyUnicode_Check(obj)) {
+		PyObject *string = PyUnicode_AsUTF8String(obj);	/* new reference */
+		if (!string) {
+			Printf(("Py2Pl: string is NULL!? -> Py_None\n"));
+			return &PL_sv_undef;
+		}
+		char *str = PyString_AsString(string);
+		SV *s2 = newSVpv(str, PyString_Size(string));
+		SvUTF8_on(s2);
+		Printf(("Py2Pl: utf8 string \n"));
+		Py_DECREF(string);
+		return s2;
+	}
+
 	/* a string (or number) */
 	else {
 		PyObject *string = PyObject_Str(obj);	/* new reference */
@@ -308,7 +322,10 @@ PyObject *Pl2Py(SV * obj) {
 		char *str = SvPV(obj, len);
 		Printf(("string = "));
 		Printf(("%s\n", str));
-		o = PyString_FromStringAndSize(str, len);
+		if (SvUTF8(obj))
+			o = PyUnicode_DecodeUTF8(str, len, "replace");
+		else
+			o = PyString_FromStringAndSize(str, len);
 		Printf(("string ok\n"));
 	}
 	/* An array */
