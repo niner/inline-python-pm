@@ -530,8 +530,9 @@ PerlSub_call(PerlSub_object *self, PyObject *args) {
   }
   else {
     AV *lst = newAV();
-    for (i=0; i<count; i++) {
-      av_push(lst, SvREFCNT_inc(POPs));
+    av_extend(lst, count);
+    for (i = count - 1; i >= 0; i--) {
+      av_store(lst, i, SvREFCNT_inc(POPs));
     }
     SV *rv_lst = newRV_inc((SV*)lst);
     retval = Pl2Py(rv_lst);
