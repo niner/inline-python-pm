@@ -1,4 +1,4 @@
-use Test::Simple tests => 46;
+use Test::Simple tests => 48;
 use strict;
 
 package Fart::Fiddle;
@@ -52,6 +52,10 @@ sub pass_through {
 }
 
 package main;
+
+sub named {
+    my ($positional, $named) = @_;
+}
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_eval py_call_function py_new_object);
@@ -120,6 +124,9 @@ def test_exec(code, context):
     res = test_func(context)
     del(test_func)
     return res
+
+def call_named(obj, foo):
+    perl.named(obj, foo=foo)
 
 END
 
@@ -253,3 +260,6 @@ def test_func(context):
 TEST_FUNC
 
 ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");
+
+ok(check_destruction( sub { call_named(Fart::Fiddle->new, Fart::Fiddle->new) }), 'Object passed as positional and named parameter deleted');
+ok(check_destruction( sub { call_named(0, 0) }), 'Scalar passed as positional and named parameter deleted');

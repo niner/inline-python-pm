@@ -270,6 +270,42 @@ This allows Python code to access the perl object's data like:
 
    print my_perl_object.field_name
 
+=head2 named arguments
+
+When a Perl sub is called with named arguments from Python code, Inline::Python
+follows the PyObject_Call protocol: positional arguments are given as array ref
+followed by named arguments as a hash ref. A Perl method supporting named
+arguments would therefore look like:
+
+    sub supports_named_arguments {
+        my ($self, $positional, $named) = @_;
+	foreach (qw( named1 named2 )) {
+	    last unless @$positional;
+	    $named->{$_} = shift @$positional;
+	}
+	...
+    }
+
+If this method is called using only positional arguments, they would just be
+pushed into @_ like in any other method, complicating it to:
+
+    sub supports_named_arguments {
+        my ($self, $positional, $named) = @_;
+	if (@_ == 3 and $size and ref $size and ref $size eq 'ARRAY' and ref $useimage eq 'HASH') { # called using named parameters
+	    foreach (qw( named1 named2 ... )) {
+		last unless @$positional;
+		$named->{$_} = shift @$positional;
+	    }
+	}
+	else {
+	    $named = { named1 => $positional, named2 => $named, named3 => $_[3], ... };
+	}
+	...
+    }
+
+As this adds a lot of boiler plate code to subroutines, it is better to just
+use Perl named arguments conventions (single hashref parameter) if possible.
+
 =head1 Using the PerlSub Type
 
 All Perl subs are wrapped in the PerlSub type, so that they can emulate Python

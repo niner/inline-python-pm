@@ -1,3 +1,4 @@
+/* vim: set shiftwidth=2 softtabstop=2: */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +46,7 @@ DL_EXPORT(PyObject *) newPerlMethod_object(PyObject *base,
 DL_EXPORT(PyObject *) newPerlCfun_object(PyObject* (*cfun)(PyObject *self, 
 							   PyObject *args));
 staticforward void       PerlSub_dealloc(PerlSub_object *self);
-staticforward PyObject * PerlSub_call(PerlSub_object *self, PyObject *args);
+staticforward PyObject * PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw);
 staticforward PyObject * PerlSub_repr(PerlSub_object *self, PyObject *args);
 staticforward PyObject * PerlSub_getattr(PerlSub_object *self, char *name);
 staticforward int PerlSub_setattr(PerlSub_object *self, 
@@ -474,7 +475,7 @@ PerlSub_dealloc(PerlSub_object *self) {
 }
 
 static PyObject *
-PerlSub_call(PerlSub_object *self, PyObject *args) {
+PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
   dSP;
   int i;  
   int len = PyObject_Length(args);
@@ -491,12 +492,27 @@ PerlSub_call(PerlSub_object *self, PyObject *args) {
 
   if (self->obj) XPUSHs(self->obj);
 
-  for (i=0; i<len; i++) {
-    SV *arg = Py2Pl(PyTuple_GetItem(args, i));
-    XPUSHs(arg);
-    if (! sv_isobject(arg))
-      sv_2mortal(arg);
+  if (kw) { /* if keyword arguments are present, positional arguments get pushed as into an arrayref */
+    AV *positional = newAV();
+    for (i=0; i<len; i++) {
+      SV *arg = Py2Pl(PyTuple_GetItem(args, i));
+      av_push(positional, arg);
+    }
+    XPUSHs(newRV_noinc((SV *) positional));
+
+    SV *kw_hash = Py2Pl(kw);
+    XPUSHs(kw_hash);
+    sv_2mortal(kw_hash);
   }
+  else {
+    for (i=0; i<len; i++) {
+      SV *arg = Py2Pl(PyTuple_GetItem(args, i));
+      XPUSHs(arg);
+      if (! sv_isobject(arg))
+	sv_2mortal(arg);
+    }
+  }
+
   PUTBACK;
 
   /* call the function */
