@@ -38,6 +38,9 @@ t/23getattr.t
 t/24getitem.t
 t/25py_sub.t
 t/26undef.t
+t/27pyattrs.t
+t/28exception.t
+t/29named_params.t
 TESTED
 ToDo
 util.c

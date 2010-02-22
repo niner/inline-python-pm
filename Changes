@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.33  Mon Feb 22 10:30:00 CET 2010 (Stefan Seifert)
+	- Added support for named arguments for Perl subs
+
 0.32  Fri Jan 29 20:00:00 CET 2010 (Stefan Seifert)
 	- Perl UTF-8 strings now get converted to Python Unicode strings and vice
 	  versa. This could potentially lead to incompatibilities with existing code.
