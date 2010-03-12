@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.34  Fri Mar 12 12:20:00 CET 2010 (Stefan Seifert)
+	- Fixed refcounting of positional arguments in named argument calls to Perl
+	  subs.
+
 0.33  Mon Feb 22 10:30:00 CET 2010 (Stefan Seifert)
 	- Added support for named arguments for Perl subs
 
