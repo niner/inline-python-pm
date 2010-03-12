@@ -496,13 +496,14 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
     AV *positional = newAV();
     for (i=0; i<len; i++) {
       SV *arg = Py2Pl(PyTuple_GetItem(args, i));
-      av_push(positional, arg);
+      av_push(positional, SvREFCNT_inc(arg));
     }
     XPUSHs(newRV_noinc((SV *) positional));
 
     SV *kw_hash = Py2Pl(kw);
     XPUSHs(kw_hash);
     sv_2mortal(kw_hash);
+    sv_2mortal(positional);
   }
   else {
     for (i=0; i<len; i++) {
