@@ -297,12 +297,12 @@ PyObject *Pl2Py(SV * obj) {
 	}
 
 	/* An integer */
-	else if (SvIOKp(obj)) {
+	else if (SvIOK(obj)) {
 		Printf(("integer\n"));
 		o = PyInt_FromLong((long) SvIV(obj));
 	}
 	/* A floating-point number */
-	else if (SvNOKp(obj)) {
+	else if (SvNOK(obj)) {
 		PyObject *tmp = PyString_FromString(SvPV_nolen(obj));
 		Printf(("float\n"));
 		if (tmp)

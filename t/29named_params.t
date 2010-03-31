@@ -1,5 +1,4 @@
 use Test::More tests => 5;
-use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
 our $fiddles = 0;
