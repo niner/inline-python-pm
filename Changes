@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.35  Wed Mar 31 11:00:00 CET 2010 (Stefan Seifert)
+	- Fixed floats sometimes getting converted to int when transfered from Perl
+	  to Python. Thanks to John McCullough for a great bug report.
+
 0.34  Fri Mar 12 12:20:00 CET 2010 (Stefan Seifert)
 	- Fixed refcounting of positional arguments in named argument calls to Perl
 	  subs.
