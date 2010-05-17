@@ -155,30 +155,37 @@ SV *Py2Pl(PyObject * obj) {
 			sv_val = Py2Pl(val);
 
 			if (PyUnicode_Check(key)) {
-				key_val = PyString_AsString(PyUnicode_AsUTF8String(key));
-			}
-			else if (PyString_Check(key)) {
-				key_val = PyString_AsString(key);
+				PyObject *utf8_string = PyUnicode_AsUTF8String(key);
+				key_val = PyString_AsString(utf8_string);
+				SV *utf8_key = newSVpv(key_val, PyString_Size(utf8_string));
+				SvUTF8_on(utf8_key);
+
+				hv_store_ent(retval, utf8_key, sv_val, 0);
 			}
 			else {
-				/* Warning -- encountered a non-string key value while converting a 
-				 * Python dictionary into a Perl hash. Perl can only use strings as 
-				 * key values. Using Python's string representation of the key as 
-				 * Perl's key value.
-				 */
-				PyObject *s = PyObject_Str(key);
-				key_val = PyString_AsString(s);
-				Py_DECREF(s);
-				if (PL_dowarn)
-					warn("Stringifying non-string hash key value: '%s'",
-						 key_val);
-			}
+				if (PyString_Check(key)) {
+					key_val = PyString_AsString(key);
+				}
+				else {
+					/* Warning -- encountered a non-string key value while converting a 
+					 * Python dictionary into a Perl hash. Perl can only use strings as 
+					 * key values. Using Python's string representation of the key as 
+					 * Perl's key value.
+					 */
+					PyObject *s = PyObject_Str(key);
+					key_val = PyString_AsString(s);
+					Py_DECREF(s);
+					if (PL_dowarn)
+						warn("Stringifying non-string hash key value: '%s'",
+							 key_val);
+				}
 
-			if (!key_val) {
-				croak("Invalid key on key %i of mapping\n", i);
-			}
+				if (!key_val) {
+					croak("Invalid key on key %i of mapping\n", i);
+				}
 
-			hv_store(retval, key_val, strlen(key_val), sv_val, 0);
+				hv_store(retval, key_val, strlen(key_val), sv_val, 0);
+			}
 			SvREFCNT_inc(sv_val);
 			Py_DECREF(key);
 			Py_DECREF(val);
