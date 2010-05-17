@@ -154,7 +154,13 @@ SV *Py2Pl(PyObject * obj) {
 
 			sv_val = Py2Pl(val);
 
-			if (!PyString_Check(key)) {
+			if (PyUnicode_Check(key)) {
+				key_val = PyString_AsString(PyUnicode_AsUTF8String(key));
+			}
+			else if (PyString_Check(key)) {
+				key_val = PyString_AsString(key);
+			}
+			else {
 				/* Warning -- encountered a non-string key value while converting a 
 				 * Python dictionary into a Perl hash. Perl can only use strings as 
 				 * key values. Using Python's string representation of the key as 
@@ -166,9 +172,6 @@ SV *Py2Pl(PyObject * obj) {
 				if (PL_dowarn)
 					warn("Stringifying non-string hash key value: '%s'",
 						 key_val);
-			}
-			else {
-				key_val = PyString_AsString(key);
 			}
 
 			if (!key_val) {
