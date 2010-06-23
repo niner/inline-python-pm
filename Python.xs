@@ -218,9 +218,7 @@ py_call_function(PYPKG, FNAME, ...)
   Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
-    fprintf(stderr,"Error: Python error occurred:\n");
-    PyErr_Print();
-    croak("Error -- PyObject_CallObject(...) failed.\n");
+    croak_python_exception();
     XSRETURN_EMPTY;
   }
   Printf(("no error\n"));
@@ -302,9 +300,7 @@ py_call_function_ref(FUNC, ...)
   Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
-    fprintf(stderr,"Error: Python error occurred:\n");
-    PyErr_Print();
-    croak("Error -- PyObject_CallObject(...) failed.\n");
+    croak_python_exception();
     XSRETURN_EMPTY;
   }
   Printf(("no error\n"));
@@ -415,8 +411,7 @@ py_call_method(_inst, mname, ...)
   Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
-    PyErr_Print();
-    croak("PyObject_CallObject(...) failed.\n");
+    croak_python_exception();
     XSRETURN_EMPTY;
   }
 

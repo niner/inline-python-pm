@@ -397,3 +397,21 @@ PyObject *Pl2Py(SV * obj) {
 	Printf(("returning from Pl2Py\n"));
 	return o;
 }
+
+void
+croak_python_exception() {
+    PyTypeObject *ex_type;
+    PyObject *ex_value, *ex_traceback;
+    PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
+    PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
+
+    PyObject *ex_message = PyObject_Str(ex_value);	/* new reference */
+
+    croak("%s: %s\n", (*ex_type).tp_name, PyString_AsString(ex_message));
+
+    Py_DECREF(ex_message);
+    Py_DECREF(ex_type);
+    Py_DECREF(ex_value);
+    Py_XDECREF(ex_traceback);
+}
+
