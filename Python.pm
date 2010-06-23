@@ -6,7 +6,7 @@ require DynaLoader;
 require Exporter;
 use vars qw(@ISA $VERSION @EXPORT_OK);
 @ISA = qw(Inline DynaLoader Exporter);
-$VERSION = '0.35';
+$VERSION = '0.36';
 @EXPORT_OK = qw(py_eval
 		py_new_object
 		py_call_method 

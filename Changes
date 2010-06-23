@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.36  Mon Jun 23 12:45:00 CEST 2010 (Stefan Seifert)
+	- Fixed a segfault when passing dicts with Unicode keys to Perl
+	- Pass Python exceptions to Perl instead of just printing to STDERR
+
 0.35  Wed Mar 31 11:00:00 CET 2010 (Stefan Seifert)
 	- Fixed floats sometimes getting converted to int when transfered from Perl
 	  to Python. Thanks to John McCullough for a great bug report.
