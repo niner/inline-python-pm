@@ -75,7 +75,10 @@ WriteMakefile(
               LICENSE => 'perl',
 	      VERSION_FROM => 'Python.pm',
 	      PREREQ_PM => {
-			    Inline => 0.42,
+                            Inline         => 0.46,
+                            'Data::Dumper' => 0,
+                            'Test::More'   => 0,
+                            Test           => 0,
 			   },
 	      OBJECT => 'Python.o py2pl.o perlmodule.o util.o',
 	      clean => {FILES => 'blib_test/'},

@@ -28,7 +28,7 @@ The almost-one-line version is:
 -------------------------------------------------------------------------------
 INSTALLATION:
 
-This module requires Inline.pm version 0.43 or higher to be installed. In 
+This module requires Inline.pm version 0.46 or higher to be installed. In 
 addition, you need Python 1.5.2 or greater installed. Python 2.0 or greater
 is recommended.
 
