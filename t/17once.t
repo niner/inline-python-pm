@@ -9,6 +9,7 @@ sub login {
     $build_stage ? $load_stage++ : $build_stage++;
 }
 
+use Inline Config => DIRECTORY => './blib_test';
 use Inline Python;
 
 die "Error -- code was run both in build and load stages!"
