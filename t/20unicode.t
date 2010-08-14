@@ -1,7 +1,11 @@
-use Test::Simple tests => 5;
+use Test::More;
 use strict;
 use warnings;
 use utf8;
+
+eval { require 5.008; };
+plan skip_all => 'Perl 5.8 required for UTF8 tests' if $@;
+plan tests => 5;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline Python => <<'END';
