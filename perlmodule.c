@@ -159,7 +159,7 @@ static char PerlPkg_type__doc__[] =
 
 /* type definition */
 DL_EXPORT(PyTypeObject) PerlPkg_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
+  PyObject_HEAD_INIT(NULL)
   0,                            /*ob_size*/
   "_perl_pkg",                  /*tp_name*/
   sizeof(PerlPkg_object),       /*tp_basicsize*/
@@ -359,7 +359,7 @@ PyMappingMethods mp_methods = {
 
 /* type definition */
 DL_EXPORT(PyTypeObject) PerlObj_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
+  PyObject_HEAD_INIT(NULL)
   0,                            /*ob_size*/
   "_perl_obj",                  /*tp_name*/
   sizeof(PerlObj_object),       /*tp_basicsize*/
@@ -654,7 +654,7 @@ static char PerlSub_type__doc__[] =
 
 /* type definition */
 DL_EXPORT(PyTypeObject) PerlSub_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
+  PyObject_HEAD_INIT(NULL)
   0,                            /*ob_size*/
   "_perl_sub",                  /*tp_name*/
   sizeof(PerlSub_object),       /*tp_basicsize*/
