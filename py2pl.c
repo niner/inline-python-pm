@@ -43,6 +43,7 @@ SV *Py2Pl(PyObject * obj) {
 	Printf(("Mapping check:  %i\n", PyMapping_Check(obj)));
 	Printf(("Sequence check: %i\n", PySequence_Check(obj)));
 	Printf(("Iter check:     %i\n", PyIter_Check(obj)));
+	Printf(("Function check: %i\n", PyFunction_Check(obj)));
 	Printf(("Module check:   %i\n", PyModule_Check(obj)));
 	Printf(("Class check:    %i\n", PyClass_Check(obj)));
 	Printf(("Method check:   %i\n", PyMethod_Check(obj)));
@@ -69,7 +70,7 @@ SV *Py2Pl(PyObject * obj) {
 	/* unwrap Perl code refs */
 	else if (PerlSubObject_Check(obj)) {
 		Printf(("Py2Pl: Sub_object\n"));
-		return ((PerlSub_object *) obj)->ref;
+		return newRV_inc((SV *) ((PerlSub_object *) obj)->ref);
 	}
 
 	else
