@@ -70,7 +70,19 @@ SV *Py2Pl(PyObject * obj) {
 	/* unwrap Perl code refs */
 	else if (PerlSubObject_Check(obj)) {
 		Printf(("Py2Pl: Sub_object\n"));
-		return newRV_inc((SV *) ((PerlSub_object *) obj)->ref);
+		SV *ref = ((PerlSub_object *) obj)->ref;
+		if (! ref) { // probably an inherited method
+			if (! ((PerlSub_object *) obj)->obj)
+				croak("Error: could not find a code reference or object method for PerlSub");
+			SV *sub_obj = (SV*)SvRV(((PerlSub_object *) obj)->obj);
+			HV* pkg = SvSTASH(sub_obj);
+			char *sub = PyString_AsString(PyObject_Str(((PerlSub_object *) obj)->sub));
+			GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, sub, TRUE);
+			if (gv && isGV(gv)) {
+				ref = GvCV(gv);
+			}
+		}
+		return newRV_inc((SV *) ref);
 	}
 
 	else

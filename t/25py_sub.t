@@ -1,4 +1,4 @@
-use Test::More tests => 10;
+use Test::More tests => 13;
 use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -26,9 +26,9 @@ def pass_through(sub):
 END
 
 ok(my $sub = get_sub(), 'Got something from get_sub');
-ok($sub->(), 'hello Python');
+is($sub->(), 'hello Python');
 ok($sub = get_sub_with_arg(), 'Got a sub ref for a sub with arguments');
-ok($sub->('hello Python'), 'hello Python');
+is($sub->('hello Python'), 'hello Python');
 
 ok(call_perl_sub(bless {}, 'Foo'), 'Could call Perl sub from Python');
 
@@ -40,8 +40,17 @@ ok($sub->(), 'Perl sub got passed through getattr successfully');
 
 ok(pass_through(sub { return 1; }), 'Pass through of perl sub ref works');
 
+ok(call_perl_sub(bless {}, 'Bar'), 'Call inherited Perl method via getattr');
+ok($sub = getattr_sub_from_perl(bless {}, 'Bar'), 'Got a reference to an inherited Perl method via getattr');
+ok($sub->(), 'Inherited Perl method got passed through getattr successfully');
+
+
 package Foo;
 
 sub testsub {
     return 1;
 }
+
+package Bar;
+
+use base qw(Foo);
