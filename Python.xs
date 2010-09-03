@@ -477,6 +477,10 @@ py_get_attr(_inst, key)
 
   key_name = SvPV(key, len);
   py_retval = PyObject_GetAttrString(inst, key_name);
+  if (!py_retval || (PyErr_Occurred() != NULL)) {
+    croak_python_exception();
+    XSRETURN_EMPTY;
+  }
 
   Printf(("calling Py2Pl()\n"));
   ret = Py2Pl(py_retval);

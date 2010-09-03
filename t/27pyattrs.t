@@ -1,4 +1,4 @@
-use Test::More tests => 6;
+use Test::More tests => 9;
 
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -18,6 +18,10 @@ class Foo:
         if attr == 'bar':
             return 'bar'
 
+class KillMe:
+    def __getattr__(self, attr):
+        raise KeyError(attr)
+
 END
 
 my $foo = Foo->new();
@@ -34,3 +38,9 @@ $foo->set_foo;
 is($foo->{foo}, 'foo', 'get attribute after Python object changes');
 
 is($foo->{bar}, 'bar', '__getattr__ method also works');
+
+ok(not($foo->{non_existing}), 'Surviving accessing a non existent attribute');
+
+my $killer = KillMe->new();
+ok(not(eval { $killer->{foo} }), 'survived KeyError in __getattr__');
+is($@, "exceptions.KeyError: 'foo'\n", 'Got the KeyError');
