@@ -216,7 +216,7 @@ SV *Py2Pl(PyObject * obj) {
 	}
 
 	/* a function or method */
-	else if (PyFunction_Check(obj)) {
+	else if (PyFunction_Check(obj) || PyMethod_Check(obj)) {
 		SV *inst_ptr = newSViv(0);
 		SV *inst;
 		MAGIC *mg;
