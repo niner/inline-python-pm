@@ -1,4 +1,4 @@
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -9,6 +9,9 @@ def get_sub():
 
 def get_sub_with_arg():
     return lambda x: x
+
+def len_array():
+    return lambda: len([])
 
 def call_perl_sub(foo):
     sub = getattr(foo, 'testsub')
@@ -35,6 +38,8 @@ ok(my $sub = get_sub(), 'Got something from get_sub');
 is($sub->(), 'hello Python');
 ok($sub = get_sub_with_arg(), 'Got a sub ref for a sub with arguments');
 is($sub->('hello Python'), 'hello Python');
+
+is(len_array->(), 0);
 
 ok(call_perl_sub(bless {}, 'Foo'), 'Could call Perl sub from Python');
 
