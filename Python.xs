@@ -450,6 +450,36 @@ py_call_method(_inst, mname, ...)
 #define NUM_FIXED_ARGS 2
 
 void
+py_has_attr(_inst, key)
+  SV*	_inst;
+  SV*   key;
+  PREINIT:
+
+  PyObject *inst;
+  char     *key_name;
+  STRLEN   len;
+
+  PPCODE:
+
+  Printf(("get_object_data\n"));
+
+  if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
+    inst = (PyObject*)SvIV(SvRV(_inst));
+  }
+  else {
+    croak("Object did not have Inline::Python::Object magic");
+    XSRETURN_EMPTY;
+  }
+
+  Printf(("inst {%p} successfully passed the PVMG test\n", inst));
+
+  key_name = SvPV(key, len);
+  XPUSHs(newSViv(PyObject_HasAttrString(inst, key_name)));
+
+#undef  NUM_FIXED_ARGS
+#define NUM_FIXED_ARGS 2
+
+void
 py_get_attr(_inst, key)
   SV*	_inst;
   SV*   key;
@@ -487,7 +517,7 @@ py_get_attr(_inst, key)
   if (! sv_isobject(ret))
       sv_2mortal(ret); // if ret is an object, this already gets done by the following line
   Py_DECREF(py_retval);
-  
+
   XPUSHs(ret);
 
 #undef  NUM_FIXED_ARGS
