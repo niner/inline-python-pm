@@ -1,4 +1,4 @@
-use Test::More tests => 9;
+use Test::More tests => 12;
 
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -40,6 +40,9 @@ is($foo->{foo}, 'foo', 'get attribute after Python object changes');
 is($foo->{bar}, 'bar', '__getattr__ method also works');
 
 ok(not($foo->{non_existing}), 'Surviving accessing a non existent attribute');
+ok(Inline::Python::py_get_attr($foo, 'get_foo'), 'Can access methods via py_get_attr');
+ok($foo->{get_foo}, 'Can access methods as attributes');
+is($foo->{get_foo}->(), 'foo', 'Returned method works');
 
 my $killer = KillMe->new();
 ok(not(eval { $killer->{foo} }), 'survived KeyError in __getattr__');

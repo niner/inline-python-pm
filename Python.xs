@@ -484,7 +484,8 @@ py_get_attr(_inst, key)
 
   Printf(("calling Py2Pl()\n"));
   ret = Py2Pl(py_retval);
-  sv_2mortal(ret);
+  if (! sv_isobject(ret))
+      sv_2mortal(ret); // if ret is an object, this already gets done by the following line
   Py_DECREF(py_retval);
   
   XPUSHs(ret);
