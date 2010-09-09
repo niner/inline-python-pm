@@ -418,11 +418,18 @@ croak_python_exception() {
     PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
 
     PyObject *ex_message = PyObject_Str(ex_value);	/* new reference */
-    PyObject *tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
 
-    croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message), PyInt_AsLong(tb_lineno));
+    if (ex_traceback) {
+        PyObject *tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
 
-    Py_DECREF(tb_lineno);
+        croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message), PyInt_AsLong(tb_lineno));
+
+        Py_DECREF(tb_lineno);
+    }
+    else {
+        croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message));
+    }
+
     Py_DECREF(ex_message);
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);
