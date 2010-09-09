@@ -313,7 +313,7 @@ sub py_new_object {
 #==============================================================================
 package Inline::Python::Object;
 
-use overload '%{}' => \&__data__, fallback => 1;
+use overload '%{}' => \&__data__, '""' => \&__inline_str__, fallback => 1;
 
 sub new {
     my $perlpkg = shift;
@@ -325,6 +325,12 @@ sub __data__ {
 
     tie my %data, 'Inline::Python::Object::Data', $self;
     return \%data;
+}
+
+sub __inline_str__ {
+    my ($self) = @_;
+
+    return Inline::Python::py_has_attr($self, '__str__') ? $self->__str__() : $self;
 }
 
 sub AUTOLOAD {
