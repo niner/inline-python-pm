@@ -1,4 +1,4 @@
-use Test::More tests => 11;
+use Test::More tests => 14;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_call_function);
@@ -15,6 +15,15 @@ def bounce_array(a):
 
 def perl_list(a):
     return a.list();
+
+def len_perl_list(a):
+    return len(a.list())
+
+def len_perl_array(a):
+    return len(a.array())
+
+def len_empty_perl_array(a):
+    return len(a.empty_array())
 
 END
 
@@ -35,6 +44,9 @@ ok(@a == 1);
 is((bounce_array([1, 2, 3]))[2], 3);
 
 is((perl_list(Foo->new))[2], 3);
+is(len_perl_list(Foo->new), 3);
+is(len_perl_array(Foo->new), 3);
+is(len_empty_perl_array(Foo->new), 0);
 
 my @b = (0.1,0.2,0.3,0.4);
 is((bounce_array(\@b))[0], 0.1);
@@ -50,4 +62,12 @@ sub new {
 
 sub list {
     return (1, 2, 3);
+}
+
+sub array {
+    return [1, 2, 3];
+}
+
+sub empty_array {
+    return [];
 }

@@ -21,11 +21,11 @@
  ****************************/
 SV *Py2Pl(PyObject * obj) {
 	/* elw: see what python says things are */
-	PyObject *this_type = PyObject_Type(obj);
-	PyObject *t_string = PyObject_Str(this_type);
 	int is_string = PyString_Check(obj) || PyUnicode_Check(obj);
-	char *type_str = PyString_AsString(t_string);
-	Printf(("type is %s\n", type_str));
+        PyObject *this_type = PyObject_Type(obj);
+        PyObject *t_string = PyObject_Str(this_type);
+        char *type_str = PyString_AsString(t_string);
+        Printf(("type is %s\n", type_str));
 #ifdef I_PY_DEBUG
 	printf("Py2Pl object:\n\t");
 	PyObject_Print(obj, stdout, Py_PRINT_RAW);
@@ -413,15 +413,16 @@ PyObject *Pl2Py(SV * obj) {
 
 void
 croak_python_exception() {
-    PyTypeObject *ex_type;
-    PyObject *ex_value, *ex_traceback;
+    PyObject *ex_type, *ex_value, *ex_traceback;
     PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
     PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
 
     PyObject *ex_message = PyObject_Str(ex_value);	/* new reference */
+    PyObject *tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
 
-    croak("%s: %s\n", (*ex_type).tp_name, PyString_AsString(ex_message));
+    croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message), PyInt_AsLong(tb_lineno));
 
+    Py_DECREF(tb_lineno);
     Py_DECREF(ex_message);
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);

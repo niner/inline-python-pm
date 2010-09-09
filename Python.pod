@@ -183,6 +183,11 @@ generates an instance of Inline::Python::Object, the base class for all
 Inline::Python objects. This base class knows how to do all the things you 
 need: calling methods, in this case.
 
+=head1 Exceptions
+
+Exceptions thrown in Python code get translated to Perl exceptions which you can
+catch using eval.
+
 =head1 Using Perl inside Python (inside Perl)
 
 This section doesn't talk at all about C<Inline::Python>. It's about how
@@ -709,13 +714,8 @@ namespace before Perl binds to it.
 
 Inline::Python is known to leak memory. Version 0.24 fixes most of these leaks,
 but it's still not completely clean and I have no idea where the remaining
-leaks would be.
-
-There my also be segfaults on errors happening in Python space. If these happen
-for you, try catching exceptions with try/except, before they reach Perl.
-
-I am very interested in reports of segfaults, leaks other than the ones
-described and of course testcases.
+leaks would be. I am however very interested in reports of segfaults and leaks
+and of course testcases.
 
 =back
 

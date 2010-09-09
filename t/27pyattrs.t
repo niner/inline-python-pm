@@ -43,4 +43,4 @@ ok(not($foo->{non_existing}), 'Surviving accessing a non existent attribute');
 
 my $killer = KillMe->new();
 ok(not(eval { $killer->{foo} }), 'survived KeyError in __getattr__');
-is($@, "exceptions.KeyError: 'foo'\n", 'Got the KeyError');
+is($@, "exceptions.KeyError: 'foo' at line 18\n", 'Got the KeyError');
