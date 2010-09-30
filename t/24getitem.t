@@ -26,13 +26,14 @@ use Test;
 use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
-BEGIN { plan tests => 3 }
+BEGIN { plan tests => 4 }
 
 use Inline::Python qw(py_eval py_call_function);
 
 py_eval(<<'END');
 
 def test_items(foo):
+    perl.ok(foo['test'] == 'Items test!')
     perl.ok(foo['test'] == 'Items test!')
 
 def test_noitems(bar):

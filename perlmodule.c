@@ -291,7 +291,8 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 
 static PyObject*
 PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
-  // check if the object supports the __getattr__ protocol
+  // check if the object supports the __getitem__ protocol
+  PyObject *item = NULL;
   char *name = PyString_AsString(PyObject_Str(key));
   SV *obj = (SV*)SvRV(self->obj);
   HV* pkg = SvSTASH(obj);
@@ -319,20 +320,22 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
       croak("__getitem__ may only return a single scalar or an empty list!\n");
 
     if (count == 1) { // item exists! Now give the value back to Python
-      return Pl2Py(POPs);
+      item = Pl2Py(POPs);
     }
 
     FREETMPS;
     LEAVE;
 
-    char attribute_error[strlen(name) + 21];
-    sprintf(attribute_error, "attribute %s not found", name);
-    PyErr_SetString(PyExc_KeyError, attribute_error);
+    if (count == 0) {
+      char attribute_error[strlen(name) + 21];
+      sprintf(attribute_error, "attribute %s not found", name);
+      PyErr_SetString(PyExc_KeyError, attribute_error);
+    }
   }
   else {
     PyErr_Format(PyExc_TypeError, "'%.200s' object is unsubscriptable", self->ob_type->tp_name);
   }
-  return NULL;
+  return item;
 }
 
 static int
