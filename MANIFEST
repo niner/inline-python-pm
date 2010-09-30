@@ -42,6 +42,7 @@ t/27pyattrs.t
 t/28exception.t
 t/29named_params.t
 t/30floats.t
+t/31stringification.t
 TESTED
 ToDo
 util.c

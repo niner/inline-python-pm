@@ -1,5 +1,17 @@
 Revision history for Perl extension Inline::Python.
 
+0.37  Thu Sep 30 09:30:00 CEST 2010 (Stefan Seifert)
+	- Added line numbers to Python exception messages.
+	- Fixed passing of a perl code ref through Python space.
+	- Allow passing references to methods from Python to Perl.
+	- Implemented py_has_attr complementing py_get_attr.
+	- We now support stringification of Python objects via __str__ methods.
+	- Fixed segfault when accessing a Python object's attributes throws an
+	  exception.
+	- Fixed some problems with the test suite, hopefully making installation
+	  work on more machines.
+	- Fixed compilation on Win32, linking still seems broken though :(
+
 0.36  Mon Jun 23 12:45:00 CEST 2010 (Stefan Seifert)
 	- Fixed a segfault when passing dicts with Unicode keys to Perl
 	- Pass Python exceptions to Perl instead of just printing to STDERR
