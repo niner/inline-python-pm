@@ -480,7 +480,7 @@ PerlSub_dealloc(PerlSub_object *self) {
 static PyObject *
 PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
   dSP;
-  int i;  
+  int i;
   int len = PyObject_Length(args);
   int count;
   PyObject *retval;
@@ -501,12 +501,12 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
       SV *arg = Py2Pl(PyTuple_GetItem(args, i));
       av_push(positional, SvREFCNT_inc(arg));
     }
-    XPUSHs(newRV_noinc((SV *) positional));
+    XPUSHs((SV *) sv_2mortal((SV *) newRV_inc((SV *) positional)));
 
     SV *kw_hash = Py2Pl(kw);
     XPUSHs(kw_hash);
     sv_2mortal(kw_hash);
-    sv_2mortal(positional);
+    sv_2mortal((SV *)positional);
   }
   else {
     for (i=0; i<len; i++) {
