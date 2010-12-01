@@ -20,11 +20,14 @@ int free_inline_py_obj(pTHX_ SV* obj, MAGIC *mg)
     IV iv = SvIV(obj);
     //Printf(("free_inline_py_obj: %p, iv: %p, ob_prev: %p, ob_next: %p, refcnt: %i\n", obj, iv, ((PyObject *)iv)->_ob_prev, ((PyObject *)iv)->_ob_next, ((PyObject *)iv)->ob_refcnt)); // _ob_prev and _ob_next are only available if Python is compiled with reference debugging enabled
     Printf(("free_inline_py_obj: %p, iv: %p, refcnt: %i\n", obj, iv, ((PyObject *)iv)->ob_refcnt));
+    free(mg->mg_virtual); // allocated in Py2Pl
     Py_XDECREF((PyObject *)iv); /* just in case */
   }
   else {
     croak("ERROR: tried to free a non-Python object. Aborting.");
   }
+
+  return 0;
 }
 
 PyObject * get_perl_pkg_subs(PyObject *package) {
