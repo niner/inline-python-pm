@@ -73,7 +73,7 @@ SV *Py2Pl(PyObject * obj) {
 	else if (PerlSubObject_Check(obj)) {
 		Printf(("Py2Pl: Sub_object\n"));
 		SV *ref = ((PerlSub_object *) obj)->ref;
-		if (! ref) { // probably an inherited method
+		if (! ref) { /* probably an inherited method */
 			if (! ((PerlSub_object *) obj)->obj)
 				croak("Error: could not find a code reference or object method for PerlSub");
 			SV *sub_obj = (SV*)SvRV(((PerlSub_object *) obj)->obj);
@@ -114,7 +114,7 @@ SV *Py2Pl(PyObject * obj) {
 		mg->mg_virtual->svt_free = free_inline_py_obj;
 
 		sv_setiv(inst, (IV) obj);
-		/*SvREADONLY_on(inst); *//* to uncomment this means I can't
+		/*SvREADONLY_on(inst); */ /* to uncomment this means I can't
 			re-bless it */
 		Py_INCREF(obj);
 		Printf(("Py2Pl: Instance. Obj: %p, inst_ptr: %p\n", obj, inst_ptr));
@@ -234,7 +234,7 @@ SV *Py2Pl(PyObject * obj) {
 		mg->mg_virtual->svt_free = free_inline_py_obj;
 
 		sv_setiv(inst, (IV) obj);
-		/*SvREADONLY_on(inst); *//* to uncomment this means I can't
+		/*SvREADONLY_on(inst); */ /* to uncomment this means I can't
 			re-bless it */
 		Py_INCREF(obj);
 		Printf(("Py2Pl: Instance. Obj: %p, inst_ptr: %p\n", obj, inst_ptr));

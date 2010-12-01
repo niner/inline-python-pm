@@ -207,7 +207,7 @@ static void
 PerlObj_dealloc(PerlObj_object *self) {
   Py_XDECREF(self->pkg);
 
-  if (self->obj) sv_2mortal(self->obj); // mortal instead of DECREF. Object might be return value
+  if (self->obj) sv_2mortal(self->obj); /* mortal instead of DECREF. Object might be return value */
 
   PyObject_Del(self);
 }
@@ -251,9 +251,9 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
     }
     else {
       /* search for an attribute */
-      // check if the object supports the __getattr__ protocol
+      /* check if the object supports the __getattr__ protocol */
       GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getattr__", FALSE);
-      if (gv && isGV(gv)) { // __getattr__ supported! Let's see if an attribute is found.
+      if (gv && isGV(gv)) { /* __getattr__ supported! Let's see if an attribute is found. */
 	dSP;
 
 	ENTER;
@@ -275,14 +275,14 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 	if (count > 1)
 	  croak("__getattr__ may only return a single scalar or an empty list!\n");
 
-	if (count == 1) { // attribute exists! Now give the value back to Python
+	if (count == 1) { /* attribute exists! Now give the value back to Python */
 	  retval = Pl2Py(POPs);
 	}
 
 	FREETMPS;
 	LEAVE;
       }
-      if (! retval) { // give up and raise a KeyError
+      if (! retval) { /* give up and raise a KeyError */
         char attribute_error[strlen(name) + 21];
         sprintf(attribute_error, "attribute %s not found", name);
         PyErr_SetString(PyExc_KeyError, attribute_error);
@@ -294,13 +294,13 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 
 static PyObject*
 PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
-  // check if the object supports the __getitem__ protocol
+  /* check if the object supports the __getitem__ protocol */
   PyObject *item = NULL;
   char *name = PyString_AsString(PyObject_Str(key));
   SV *obj = (SV*)SvRV(self->obj);
   HV* pkg = SvSTASH(obj);
   GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getitem__", FALSE);
-  if (gv && isGV(gv)) { // __getitem__ supported! Let's see if the key is found.
+  if (gv && isGV(gv)) { /* __getitem__ supported! Let's see if the key is found. */
     dSP;
 
     ENTER;
@@ -322,7 +322,7 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
     if (count > 1)
       croak("__getitem__ may only return a single scalar or an empty list!\n");
 
-    if (count == 1) { // item exists! Now give the value back to Python
+    if (count == 1) { /* item exists! Now give the value back to Python */
       item = Pl2Py(POPs);
     }
 
@@ -343,7 +343,7 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
 
 static int
 PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
-  if (SvRV(o1->obj) == SvRV(o2->obj)) // just compare the dereferenced object pointers
+  if (SvRV(o1->obj) == SvRV(o2->obj)) /* just compare the dereferenced object pointers */
     return 0;
   return 1;
 }
