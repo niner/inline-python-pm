@@ -48,6 +48,7 @@ void do_pyinit() {
   main_dict = PyModule_GetDict(PyImport_AddModule("__main__"));
   PyDict_SetItemString(main_dict, "perl", perl_obj);
 
+  Py_DECREF(perl_obj);
   Py_DECREF(dummy1); 
   Py_DECREF(dummy2);
 #endif
