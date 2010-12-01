@@ -557,3 +557,13 @@ py_set_attr(_inst, key, value)
 
   XSRETURN_EMPTY;
 
+#undef  NUM_FIXED_ARGS
+#define NUM_FIXED_ARGS 0
+
+void
+py_finalize()
+  PPCODE:
+
+  Py_Finalize();
+
+  XSRETURN_EMPTY;
