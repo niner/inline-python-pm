@@ -247,6 +247,7 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
     if (gv && isGV(gv)) {
       PyObject *py_name = PyString_FromString(name);
       retval = newPerlMethod_object(self->pkg, py_name, self->obj);
+      Py_DECREF(py_name);
     }
     else {
       /* search for an attribute */
