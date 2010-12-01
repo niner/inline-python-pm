@@ -829,6 +829,7 @@ initperl(void)
   d = PyDict_GetItemString(d, "modules");
   p = newPerlPkg_object(dummy1, dummy2);
   PyDict_SetItemString(d, "perl", p);
+  Py_DECREF(p);
 
 #ifdef CREATE_PERL
   create_perl();
