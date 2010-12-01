@@ -25,6 +25,7 @@ SV *Py2Pl(PyObject * obj) {
         PyObject *this_type = PyObject_Type(obj);
         PyObject *t_string = PyObject_Str(this_type);
         char *type_str = PyString_AsString(t_string);
+        Py_DECREF(t_string);
         Printf(("type is %s\n", type_str));
 #ifdef I_PY_DEBUG
 	printf("Py2Pl object:\n\t");
@@ -52,6 +53,7 @@ SV *Py2Pl(PyObject * obj) {
 	if ((obj->ob_type->tp_flags & Py_TPFLAGS_HAVE_CLASS))
 		printf("has class\n");
 #endif
+        Py_DECREF(this_type);
 	/* elw: this needs to be early */
 	/* None (like undef) */
 	if (!obj || obj == Py_None) {
