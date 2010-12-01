@@ -139,12 +139,14 @@ PerlPkg_getattr(PerlPkg_object *self, char *name) {
   else {
     PyObject *tmp = PyString_FromString(name);
     char *full_c = PyString_AsString(self->full);
-    if (perl_pkg_exists(full_c, name)) {
-      return newPerlPkg_object(self->full, tmp);
-    }
-    else {
-      return newPerlSub_object(self->full, tmp, NULL);
-    }
+
+    PyObject *res = perl_pkg_exists(full_c, name)
+      ? newPerlPkg_object(self->full, tmp)
+      : newPerlSub_object(self->full, tmp, NULL);
+
+    Py_DECREF(tmp);
+
+    return res;
   }
 }
 
