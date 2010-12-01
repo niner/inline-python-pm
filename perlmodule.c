@@ -750,7 +750,7 @@ static PyObject * special_perl_use(PyObject *ignored, PyObject *args) {
   Printf(("calling use...'%s'\n", PyString_AsString(s)));
 
   str = malloc((strlen("use ")
-		+ PyObject_Length(s)) * sizeof(char));
+		+ PyObject_Length(s) + 1) * sizeof(char));
   sprintf(str, "use %s", PyString_AsString(s));
 
   Printf(("eval-ing now!\n"));
