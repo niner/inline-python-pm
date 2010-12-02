@@ -1,4 +1,4 @@
-use Test::Simple tests => 48;
+use Test::Simple tests => 56;
 use strict;
 
 package Fart::Fiddle;
@@ -17,6 +17,10 @@ sub foo {
     $self->{foo} = 'perl foo';
     #warn $self->{foo};
     return $self->{foo};
+}
+
+sub b {
+    return B->new;
 }
 
 sub DESTROY {
@@ -61,6 +65,10 @@ use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_eval py_call_function py_new_object);
 use Inline Python => <<END;
 
+import perl
+import sys
+import gc
+
 class A:
     def __init__(self, obj = None):
         self.data = {'obj': obj}
@@ -74,6 +82,16 @@ class A:
 
     def obj(self):
         return self.data['obj']
+
+class B:
+    def __init__(self):
+        perl.raise_cnt()
+
+    def __del__(self):
+        perl.lower_cnt()
+
+    def foo(self):
+        return 'foo'
 
 def gen(): return A()
 
@@ -91,10 +109,14 @@ def call_methods(obj_list):
 def give_list(obj):
     return (obj.new(), obj.new())
 
+def give_array(obj):
+    arr = []
+    arr.append(obj)
+    return arr
+
 def give_hash(obj):
     return {'a': obj.new(), 'b': obj.new()}
 
-import perl
 def call_more(obj):
     more = obj.more()
     perl.ok(len(more) > 0, 'obj.more gave values')
@@ -119,14 +141,26 @@ def call_method_param_array(obj):
 def call_method_param_hash(obj):
     obj.pass_through({'a': obj.new(), 'b': obj.new()})
 
-def test_exec(code, context):
-    exec code
-    res = test_func(context)
-    del(test_func)
-    return res
+def test_exec(code, *args, **kwargs):
+    try:
+        exec code
+        res = test_func(*args, **kwargs)
+        if res == sys.stdout:
+            return "foo"
+        return res
+    except Exception, e:
+        raise Exception(str(e) + ' at line ' + str(sys.exc_traceback.tb_next and sys.exc_traceback.tb_next.tb_lineno or sys.exc_traceback.tb_lineno))
+    finally:
+        try:
+            del(test_func)
+        except:
+            pass
 
 def call_named(obj, foo):
     perl.named(obj, foo=foo)
+
+def py_obj_from_perl_obj(obj):
+    return obj.b().foo()
 
 END
 
@@ -136,6 +170,12 @@ sub check_destruction {
     $destroyed = 1;
     shift->();
     return $destroyed == 1;
+}
+sub raise_cnt {
+    $destroyed--;
+}
+sub lower_cnt {
+    $destroyed++;
 }
 
 my $o;
@@ -151,6 +191,13 @@ sub perl_pass_through {
 ok(check_destruction(sub { perl_pass_through(Fart::Fiddle->new) }), 'Perl object in Perl'); # this is more a test of check_destruction itself
 
 ok(check_destruction(sub { py_call_function('__main__', 'pass_through', Fart::Fiddle->new) }), 'pass_through in void context');
+
+ok(check_destruction(sub { py_call_function('__main__', 'B') }), 'Python object constructor');
+
+ok(check_destruction(sub { py_call_function('__main__', 'pass_through', B->new) }), 'pass_through of Python object in void context');
+ok(check_destruction(sub { my $b = B->new; $b->foo(); py_call_function('__main__', 'swallow', $b) }), 'swallow of Python object');
+ok(check_destruction(sub { my $b = B->new; py_call_function('__main__', 'py_obj_from_perl_obj', Fart::Fiddle->new) }), 'Python function gets a Python object from a Perl object');
+
 
 ok(check_destruction(sub {
     my $o = py_call_function('__main__', 'pass_through', Fart::Fiddle->new);
@@ -188,6 +235,11 @@ ok(check_destruction( sub {
     ok(@foo == 2, 'list has two entries');
     ok($foo[0], 'list value is there');
 } ), 'Python list to perl dereferenced immediately');
+
+ok(check_destruction( sub {
+    my @array = py_call_function('__main__', 'give_array', Fart::Fiddle->new);
+    my $foo = "@array";
+} ), 'Python list to perl in list context');
 
 ok(check_destruction( sub {
     my $foo = py_call_function('__main__', 'give_hash', Fart::Fiddle->new);
@@ -261,5 +313,24 @@ TEST_FUNC
 
 ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");
 
+$test_func = <<'TEST_FUNC';
+def test_func(context):
+    arr = []
+    def find_foo(obj, i):
+        if i == 0:
+            find_foo(obj, 1)
+        arr.append(obj)
+    find_foo(context, 0)
+    return arr
+TEST_FUNC
+
+ok(check_destruction( sub {
+    my @arr = py_call_function('__main__', 'test_exec', $test_func, Fart::Fiddle->new);
+    py_call_function('gc', 'collect'); # Kick the GC. Otherwise the find_foo call frame would still reference arr
+} ), "exec'ed and deleted function");
+
 ok(check_destruction( sub { call_named(Fart::Fiddle->new, Fart::Fiddle->new) }), 'Object passed as positional and named parameter deleted');
 ok(check_destruction( sub { call_named(0, 0) }), 'Scalar passed as positional and named parameter deleted');
+
+ok(check_destruction(sub { my $o; py_call_function('__main__', 'swallow', sub { $o = Fart::Fiddle->new }) } ), 'swallow perl sub with object ref');
+ok(check_destruction(sub { my $b = B->new; py_call_function('__main__', 'swallow', sub { return $b }) }), 'swallow of Python object');
