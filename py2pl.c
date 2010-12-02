@@ -108,8 +108,8 @@ SV *Py2Pl(PyObject * obj) {
 
 		/* set up magic */
 		priv.key = INLINE_MAGIC_KEY;
-		sv_magic(inst, inst, '~', (char *) &priv, sizeof(priv));
-		mg = mg_find(inst, '~');
+		sv_magic(inst, inst, PERL_MAGIC_ext, (char *) &priv, sizeof(priv));
+		mg = mg_find(inst, PERL_MAGIC_ext);
 		mg->mg_virtual = (MGVTBL *) malloc(sizeof(MGVTBL));
 		mg->mg_virtual->svt_free = free_inline_py_obj;
 
