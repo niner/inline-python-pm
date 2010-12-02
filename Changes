@@ -1,5 +1,12 @@
 Revision history for Perl extension Inline::Python.
 
+0.38  Thu Dec 02 14:00:00 CEST 2010 (Stefan Seifert)
+	- Fix Perl assertion fail if __getitem__ called multiple times
+	- Fix "Attempt to free unreferenced scalar" sometimes happening when
+	  calling a Perl sub with named parameters from Python.
+	- Fix several memory leaks found using valgrind
+	- Add py_finalize to be able to shut down the Python interpreter.
+
 0.37  Thu Sep 30 09:30:00 CEST 2010 (Stefan Seifert)
 	- Added line numbers to Python exception messages.
 	- Fixed passing of a perl code ref through Python space.
