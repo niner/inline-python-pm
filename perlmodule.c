@@ -502,7 +502,7 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
     AV *positional = newAV();
     for (i=0; i<len; i++) {
       SV *arg = Py2Pl(PyTuple_GetItem(args, i));
-      av_push(positional, SvREFCNT_inc(arg));
+      av_push(positional, sv_isobject(arg) ? SvREFCNT_inc(arg) : arg);
     }
     XPUSHs((SV *) sv_2mortal((SV *) newRV_inc((SV *) positional)));
 
