@@ -201,7 +201,8 @@ SV *Py2Pl(PyObject * obj) {
 
 				hv_store(retval, key_val, strlen(key_val), sv_val, 0);
 			}
-			SvREFCNT_inc(sv_val);
+                        if (sv_isobject(sv_val)) // needed because objects get mortalized in Py2Pl
+                            SvREFCNT_inc(sv_val);
 			Py_DECREF(key);
 			Py_DECREF(val);
 		}
