@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline Python => <<'END';
@@ -16,6 +16,10 @@ class Foo:
         self.data = dat
         self.data[u'ü'] = u'ü'
 
+def get_dict():
+    return {u'föö': 'bar'}
+def access_dict(test_dict):
+    return test_dict[u'föö']
 END
 
 my $obj = new Foo;
@@ -32,3 +36,7 @@ TODO: {
     local $TODO = 'I think this depends on Python being compiled in a certain way';
     is($obj->get_data()->{ü}, 'ü');
 }
+
+is(access_dict({föö => 'bar'}), 'bar');
+my $dict = get_dict();
+is(access_dict($dict), 'bar');

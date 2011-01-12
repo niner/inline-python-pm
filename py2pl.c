@@ -389,9 +389,18 @@ PyObject *Pl2Py(SV * obj) {
 		for (i = 0; i < len; i++) {
 			HE *next = hv_iternext(hv);
 			I32 n_a;
-			char *key = hv_iterkey(next, &n_a);
+            SV *key = hv_iterkeysv(next);
+            if (!key)
+                croak("Hash entry without key!?");
+            STRLEN len;
+            char *key_str = SvPV(key, len);
+            PyObject *py_key;
+            if (SvUTF8(key))
+                py_key = PyUnicode_DecodeUTF8(key_str, len, "replace");
+            else
+                py_key = PyString_FromStringAndSize(key_str, len);
 			PyObject *val = Pl2Py(hv_iterval(hv, next));
-			PyDict_SetItemString(o, key, val);
+			PyDict_SetItem(o, py_key, val);
 			Py_DECREF(val);
 		}
 
