@@ -279,6 +279,7 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 	  retval = Pl2Py(POPs);
 	}
 
+        PUTBACK;
 	FREETMPS;
 	LEAVE;
       }
@@ -326,6 +327,7 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
       item = Pl2Py(POPs);
     }
 
+    PUTBACK;
     FREETMPS;
     LEAVE;
 
@@ -534,10 +536,10 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
   else {
     croak("Error: PerlSub called, but no C function, sub, or name found!\n");
   }
+  SPAGAIN;
   
   Py_DECREF(self); /* release*/
   
-  SPAGAIN;
 
   if (SvTRUE(ERRSV)) {
     warn("%s\n", SvPV_nolen(ERRSV));
