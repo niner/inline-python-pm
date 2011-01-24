@@ -213,8 +213,14 @@ py_call_function(PYPKG, FNAME, ...)
       PyTuple_SetItem(tuple, i-NUM_FIXED_ARGS, o);
     }
   }
+
+  PUTBACK;
+
   Printf(("calling func\n"));
   py_retval = PyObject_CallObject(func, tuple);
+
+  SPAGAIN; /* refresh local stack pointer, could have been modified by Perl code called from Python */
+
   Py_DECREF(func);
   Py_DECREF(tuple);
   Printf(("received a response\n"));
@@ -254,8 +260,9 @@ py_call_function(PYPKG, FNAME, ...)
     AV* av = (AV*)SvRV(ret);
     int len = av_len(av) + 1;
     int i;
+    EXTEND(SP, len);
     for (i=0; i<len; i++) {
-      XPUSHs(sv_2mortal(av_shift(av)));
+      PUSHs(sv_2mortal(av_shift(av)));
     }
   } else {
     XPUSHs(ret);
@@ -296,8 +303,14 @@ py_call_function_ref(FUNC, ...)
       PyTuple_SetItem(tuple, i-NUM_FIXED_ARGS, o);
     }
   }
+
+  PUTBACK;
+
   Printf(("calling func\n"));
   py_retval = PyObject_CallObject(func, tuple);
+
+  SPAGAIN; /* refresh local stack pointer, could have been modified by Perl code called from Python */
+
   Py_DECREF(tuple);
   Printf(("received a response\n"));
   if (!py_retval || (PyErr_Occurred() != NULL)) {
@@ -336,11 +349,12 @@ py_call_function_ref(FUNC, ...)
     AV* av = (AV*)SvRV(ret);
     int len = av_len(av) + 1;
     int i;
+    EXTEND(SP, len);
     for (i=0; i<len; i++) {
-      XPUSHs(sv_2mortal(av_shift(av)));
+      PUSHs(sv_2mortal(av_shift(av)));
     }
   } else {
-    XPUSHs(ret);
+    PUSHs(ret);
   }
 
 
@@ -406,8 +420,13 @@ py_call_method(_inst, mname, ...)
     }
   }
 
+  PUTBACK;
+
   Printf(("calling func\n"));
   py_retval = PyObject_CallObject(method, tuple);
+
+  SPAGAIN; /* refresh local stack pointer, could have been modified by Perl code called from Python */
+
   Py_DECREF(method);
   Py_DECREF(tuple);
   Printf(("received a response\n"));
@@ -440,11 +459,12 @@ py_call_method(_inst, mname, ...)
     AV* av = (AV*)SvRV(ret);
     int len = av_len(av) + 1;
     int i;
+    EXTEND(SP, len);
     for (i=0; i<len; i++) {
-      XPUSHs(sv_2mortal(av_shift(av)));
+      PUSHs(sv_2mortal(av_shift(av)));
     }
   } else {
-    XPUSHs(ret);
+    PUSHs(ret);
   }
 
 #undef  NUM_FIXED_ARGS
