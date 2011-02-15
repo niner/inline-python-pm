@@ -402,6 +402,7 @@ PyObject *Pl2Py(SV * obj) {
                 py_key = PyString_FromStringAndSize(key_str, len);
 			PyObject *val = Pl2Py(hv_iterval(hv, next));
 			PyDict_SetItem(o, py_key, val);
+			Py_DECREF(py_key);
 			Py_DECREF(val);
 		}
 
