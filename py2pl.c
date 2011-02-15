@@ -135,7 +135,8 @@ SV *Py2Pl(PyObject * obj) {
 			PyObject *tmp = PySequence_GetItem(obj, i);	/* new reference */
 			SV *next = Py2Pl(tmp);
 			av_push(retval, next);
-			SvREFCNT_inc(next);
+                        if (sv_isobject(next)) // needed because objects get mortalized in Py2Pl
+				SvREFCNT_inc(next);
 			Py_DECREF(tmp);
 		}
 		return newRV_noinc((SV *) retval);
