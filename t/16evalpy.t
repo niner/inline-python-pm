@@ -1,4 +1,4 @@
-use Test;
+use Test::More;
 BEGIN { plan tests => 11 }
 use Data::Dumper;
 use Inline::Python qw(eval_python);
@@ -26,14 +26,14 @@ END
 #============================================================================
 # Evaluate a python function
 #============================================================================
-ok(eval_python("__main__", "sum", 1, 2, 3), 6);
-ok(eval_python("sum(1, 2, 3)", 0), 6);
+is(eval_python("__main__", "sum", 1, 2, 3), 6);
+is(eval_python("sum(1, 2, 3)", 0), 6, "sum works");
 ok($o = eval_python("__main__", "Bazz"));
 
 #============================================================================
 # Evaluate a python method
 #============================================================================
-ok(eval_python($o, "scale", 10), undef);
-ok(eval_python($o, "factor"), 10);
-ok(eval_python($o, "scale", 0.05), undef);
-ok(eval_python($o, "factor"), 0.5);
+is(eval_python($o, "scale", 10), undef);
+is(eval_python($o, "factor"), 10);
+is(eval_python($o, "scale", 0.05), undef);
+is(eval_python($o, "factor"), 0.5);
