@@ -4,8 +4,6 @@ use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_call_function);
 use Inline Python => <<'END';
 
-import logging
-
 def get_int():
     return 10
 

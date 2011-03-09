@@ -1,5 +1,5 @@
 use Test;
-BEGIN { plan tests => 4 }
+BEGIN { plan tests => 6 }
 
 use Inline::Python qw(py_eval py_call_function);
 
@@ -20,3 +20,8 @@ ok(not defined py_eval("Foo()"));
 ok(    defined py_eval("Foo()", 0));
 ok(not defined py_eval("Foo()", 1));
 ok(not defined py_eval("Foo()", 2));
+
+my $bar = py_eval('Bar()', 0);
+ok($bar);
+$bar->put(foo => 'bar');
+ok($bar->get('foo') eq 'bar');

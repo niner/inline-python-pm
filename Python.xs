@@ -135,7 +135,7 @@ py_study_package(PYPKG="__main__")
   XPUSHs(newSVpv("classes", 0));
   XPUSHs(newRV_noinc((SV*)classes));
 
-SV *
+void
 py_eval(str, type=1)
 	char *str
 	int type
@@ -144,8 +144,9 @@ py_eval(str, type=1)
 	PyObject *	globals;
 	PyObject *	locals;
 	PyObject *	py_result;
-	int 		context;
-    CODE:
+	int             context;
+	SV*             ret = NULL;
+    PPCODE:
 	Printf(("py_eval: code: %s\n", str));
 	/* doc:  if the module wasn't already loaded, you will get an empty
 	* module object. */
@@ -157,8 +158,8 @@ py_eval(str, type=1)
 	globals = PyModule_GetDict(main_module);
 	Printf(("py_eval: globals=%p\n", globals));
 	locals = globals;
-	context = (type == 0) ? Py_eval_input : 
-		  (type == 1) ? Py_file_input : 
+	context = (type == 0) ? Py_eval_input :
+		  (type == 1) ? Py_file_input :
 				Py_single_input;
 	Printf(("py_eval: type=%i\n", type));
 	Printf(("py_eval: context=%i\n", context));
@@ -168,10 +169,14 @@ py_eval(str, type=1)
 		croak("Error -- py_eval raised an exception");
 		XSRETURN_EMPTY;
 	}
-	RETVAL = Py2Pl(py_result);
+	ret = Py2Pl(py_result);
+	if (! sv_isobject(ret))
+	    sv_2mortal(ret); /* if ret is an object, this already gets done by the following line */
 	Py_DECREF(py_result);
-    OUTPUT:
-	RETVAL
+	if (type == 0)
+	  XPUSHs(ret);
+	else
+	  XSRETURN_EMPTY;
 
 #undef  NUM_FIXED_ARGS
 #define NUM_FIXED_ARGS 2

@@ -1,4 +1,4 @@
-use Test::Simple tests => 56;
+use Test::Simple tests => 57;
 use strict;
 
 package Fart::Fiddle;
@@ -193,6 +193,7 @@ ok(check_destruction(sub { perl_pass_through(Fart::Fiddle->new) }), 'Perl object
 ok(check_destruction(sub { py_call_function('__main__', 'pass_through', Fart::Fiddle->new) }), 'pass_through in void context');
 
 ok(check_destruction(sub { py_call_function('__main__', 'B') }), 'Python object constructor');
+ok(check_destruction(sub { py_eval('B()', 0) }), 'Python object constructor in py_eval');
 
 ok(check_destruction(sub { py_call_function('__main__', 'pass_through', B->new) }), 'pass_through of Python object in void context');
 ok(check_destruction(sub { my $b = B->new; $b->foo(); py_call_function('__main__', 'swallow', $b) }), 'swallow of Python object');
