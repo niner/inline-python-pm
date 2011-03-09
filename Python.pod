@@ -661,6 +661,17 @@ On my machine, %namespace looks something like this:
 Each result can be fed to py_bind_function() and py_bind_class(), which is 
 exactly what Inline::Python itself does.
 
+=head2 py_is_tuple()
+
+   my $array_ref = py_eval('(1, 2)')
+   $is_tuple = py_is_tuple($array_ref)
+
+This function can tell you if the array reference you got from calling some
+Python code was a tuple in Python or not (e.g. a normal array). This can be
+useful if an API requires a distinction between those cases. py_is_tuple works
+by looking for a magic marker put onto array refs by Py2Pl. Bear in mind that
+this marker may get lost when copying the array data.
+
 =head1 SEE ALSO 
 
 For information about using C<Inline>, see L<Inline>.
@@ -673,9 +684,10 @@ To subscribe, send email to inline-subscribe@perl.org
 
 =head1 BUGS AND DEFICIENCIES
 
-This is a BETA quality release of Inline::Python. It is fairly feature complete
-and runs stable with no known crasher bugs. Further testing and expanded support
-for other operating systems and platforms will be a focus for future releases.
+This is a production quality release of Inline::Python. It is fairly feature
+complete and runs stable with no known crasher bugs or memory leaks. Further
+testing and expanded support for other operating systems and platforms will be
+a focus for future releases.
 
 When reporting a bug, please do the following:
 
@@ -710,23 +722,20 @@ related to C<mymodule> or C<B> is imported, unless some Python code
 explicitly copies variables from the mymodule namespace into the global 
 namespace before Perl binds to it.
 
-=item 2
-
-Inline::Python is known to leak memory. Version 0.24 fixes most of these leaks,
-but it's still not completely clean and I have no idea where the remaining
-leaks would be. I am however very interested in reports of segfaults and leaks
-and of course testcases.
-
 =back
 
 =head1 SUPPORTED PLATFORMS
 
 Inline::Python has been tested on RedHat Linux 6.2 with a variety of different
 Perl and Python configurations. It also seems to be running pretty well on
-openSUSE at least from 10.3 to 11.2 and on Solaris.  Previous versions of
-Inline::Python working on Windows and Cygwin -- this version has never been
+openSUSE at least from 10.3 to 11.4 and on Solaris.  Previous versions of
+Inline::Python worked on Windows and Cygwin -- this version has never been
 tested there. I strongly suspect it will require patching. Please send me
 patches.
+
+This version of Inline::Python has been tested with Python versions from 2.5 to
+2.7. It may work on older versions but will almost certainly not work with
+Python 3.
 
 =head1 AUTHOR
 
