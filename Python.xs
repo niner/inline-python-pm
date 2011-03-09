@@ -107,7 +107,6 @@ py_study_package(PYPKG="__main__")
 
 	/* array of method names */
 	AV* methods = newAV();
-	AV* bases = newAV();
 
 	Printf(("Found a class: %s\n", name));
 
@@ -373,7 +372,6 @@ py_call_method(_inst, mname, ...)
   PREINIT:
 
   PyObject *inst;
-  PyObject *inherited_method = NULL;
 
   /* Other variables */
   PyObject *method;    /* the method object */

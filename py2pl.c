@@ -22,12 +22,12 @@
 SV *Py2Pl(PyObject * obj) {
 	/* elw: see what python says things are */
 	int is_string = PyString_Check(obj) || PyUnicode_Check(obj);
+#ifdef I_PY_DEBUG
         PyObject *this_type = PyObject_Type(obj);
         PyObject *t_string = PyObject_Str(this_type);
         char *type_str = PyString_AsString(t_string);
         Py_DECREF(t_string);
         Printf(("type is %s\n", type_str));
-#ifdef I_PY_DEBUG
 	printf("Py2Pl object:\n\t");
 	PyObject_Print(obj, stdout, Py_PRINT_RAW);
 	printf("\ntype:\n\t");
@@ -52,8 +52,8 @@ SV *Py2Pl(PyObject * obj) {
 		printf("heaptype true\n");
 	if ((obj->ob_type->tp_flags & Py_TPFLAGS_HAVE_CLASS))
 		printf("has class\n");
-#endif
         Py_DECREF(this_type);
+#endif
 	/* elw: this needs to be early */
 	/* None (like undef) */
 	if (!obj || obj == Py_None) {
@@ -81,7 +81,7 @@ SV *Py2Pl(PyObject * obj) {
 			char *sub = PyString_AsString(PyObject_Str(((PerlSub_object *) obj)->sub));
 			GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, sub, TRUE);
 			if (gv && isGV(gv)) {
-				ref = GvCV(gv);
+				ref = (SV *)GvCV(gv);
 			}
 		}
 		return newRV_inc((SV *) ref);
@@ -141,11 +141,10 @@ SV *Py2Pl(PyObject * obj) {
 		}
 
 		if (PyTuple_Check(obj)) {
-			MAGIC *mg;
 			_inline_magic priv;
 			priv.key = TUPLE_MAGIC_KEY;
 
-			sv_magic(retval, NULL, PERL_MAGIC_ext, (char *) &priv, sizeof(priv));
+			sv_magic((SV * const)retval, (SV * const)NULL, PERL_MAGIC_ext, (char *) &priv, sizeof(priv));
 		}
 
 		return newRV_noinc((SV *) retval);
@@ -419,7 +418,6 @@ PyObject *Pl2Py(SV * obj) {
 
 		for (i = 0; i < len; i++) {
 			HE *next = hv_iternext(hv);
-			I32 n_a;
             SV *key = hv_iterkeysv(next);
             if (!key)
                 croak("Hash entry without key!?");
