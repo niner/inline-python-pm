@@ -369,20 +369,41 @@ PyObject *Pl2Py(SV * obj) {
 		AV *av = (AV *) SvRV(obj);
 		int i;
 		int len = av_len(av) + 1;
-		o = PyList_New(len);
 
-		Printf(("array (%i)\n", len));
+		if (py_is_tuple(obj)) {
+			o = PyTuple_New(len);
 
-		for (i = 0; i < len; i++) {
-			SV **tmp = av_fetch(av, i, 0);
-			if (tmp) {
-				PyObject *tmp_py = Pl2Py(*tmp);
-				PyList_SetItem(o, i, tmp_py);
+			Printf(("tuple (%i)\n", len));
+
+			for (i = 0; i < len; i++) {
+				SV **tmp = av_fetch(av, i, 0);
+				if (tmp) {
+					PyObject *tmp_py = Pl2Py(*tmp);
+					PyTuple_SetItem(o, i, tmp_py);
+				}
+				else {
+					Printf(("Got a NULL from av_fetch for element %i. Might be a bug!", i));
+					Py_INCREF(Py_None);
+					PyTuple_SetItem(o, i, Py_None);
+				}
 			}
-			else {
-				Printf(("Got a NULL from av_fetch for element %i. Might be a bug!", i));
-				Py_INCREF(Py_None);
-				PyList_SetItem(o, i, Py_None);
+		}
+		else {
+			o = PyList_New(len);
+
+			Printf(("array (%i)\n", len));
+
+			for (i = 0; i < len; i++) {
+				SV **tmp = av_fetch(av, i, 0);
+				if (tmp) {
+					PyObject *tmp_py = Pl2Py(*tmp);
+					PyList_SetItem(o, i, tmp_py);
+				}
+				else {
+					Printf(("Got a NULL from av_fetch for element %i. Might be a bug!", i));
+					Py_INCREF(Py_None);
+					PyList_SetItem(o, i, Py_None);
+				}
 			}
 		}
 	}

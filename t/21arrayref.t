@@ -1,4 +1,4 @@
-use Test::More tests => 18;
+use Test::More tests => 19;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_call_function py_is_tuple);
@@ -61,6 +61,7 @@ is(ref return_tuple(), 'ARRAY');
 is(scalar @{ return_tuple() }, 3);
 is(py_is_tuple(scalar return_empty_array()), 0);
 is(py_is_tuple(scalar return_tuple()), 1);
+is(py_is_tuple(scalar bounce_array(scalar return_tuple())), 1);
 
 package Foo;
 
