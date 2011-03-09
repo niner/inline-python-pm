@@ -587,3 +587,10 @@ py_finalize()
   Py_Finalize();
 
   XSRETURN_EMPTY;
+
+#undef  NUM_FIXED_ARGS
+#define NUM_FIXED_ARGS 1
+
+int
+py_is_tuple(_inst)
+  SV* _inst;

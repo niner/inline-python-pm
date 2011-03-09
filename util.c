@@ -89,3 +89,11 @@ PyObject * perl_sub_exists(PyObject *package, PyObject *usub) {
   return retval;
 }
 
+int py_is_tuple(SV *arr) {
+  if (SvROK(arr) && SvTYPE(SvRV(arr)) == SVt_PVAV) {
+    MAGIC *mg = mg_find(SvRV(arr), PERL_MAGIC_ext);
+    return (mg && Inline_Magic_Key(mg->mg_ptr) == TUPLE_MAGIC_KEY);
+  }
+  else
+    return 0;
+}

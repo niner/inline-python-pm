@@ -32,12 +32,14 @@ typedef struct {
 } _inline_magic;
 
 #define INLINE_MAGIC_KEY 0x0DD515FD
+#define TUPLE_MAGIC_KEY 0x7475706C
 #define Inline_Magic_Key(mg_ptr) (((_inline_magic*)mg_ptr)->key)
 #define Inline_Magic_Check(mg_ptr) (Inline_Magic_Key(mg_ptr)==INLINE_MAGIC_KEY)
 
 extern DL_IMPORT(PyObject *) get_perl_pkg_subs(PyObject *);
 extern DL_IMPORT(int)	     perl_pkg_exists(char *, char *);
 extern DL_IMPORT(PyObject *) perl_sub_exists(PyObject *, PyObject *);
+extern DL_IMPORT(int)        py_is_tuple(SV *arr);
 
 /* This is called when Perl deallocates a PerlObj object */
 extern int free_inline_py_obj(pTHX_ SV* obj, MAGIC *mg);

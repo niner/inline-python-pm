@@ -139,6 +139,15 @@ SV *Py2Pl(PyObject * obj) {
 				SvREFCNT_inc(next);
 			Py_DECREF(tmp);
 		}
+
+		if (PyTuple_Check(obj)) {
+			MAGIC *mg;
+			_inline_magic priv;
+			priv.key = TUPLE_MAGIC_KEY;
+
+			sv_magic(retval, NULL, PERL_MAGIC_ext, (char *) &priv, sizeof(priv));
+		}
+
 		return newRV_noinc((SV *) retval);
 	}
 

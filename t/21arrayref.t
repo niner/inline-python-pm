@@ -1,7 +1,7 @@
-use Test::More tests => 14;
+use Test::More tests => 18;
 
 use Inline Config => DIRECTORY => './blib_test';
-use Inline::Python qw(py_call_function);
+use Inline::Python qw(py_call_function py_is_tuple);
 use Inline Python => <<'END';
 
 def return_empty_array():
@@ -24,6 +24,9 @@ def len_perl_array(a):
 
 def len_empty_perl_array(a):
     return len(a.empty_array())
+
+def return_tuple():
+    return (1, 2, 3)
 
 END
 
@@ -53,6 +56,11 @@ is((bounce_array(\@b))[0], 0.1);
 
 map($b[$_]+$b[$_], 0..$#b);
 is((bounce_array(\@b))[1], 0.2);
+
+is(ref return_tuple(), 'ARRAY');
+is(scalar @{ return_tuple() }, 3);
+is(py_is_tuple(scalar return_empty_array()), 0);
+is(py_is_tuple(scalar return_tuple()), 1);
 
 package Foo;
 

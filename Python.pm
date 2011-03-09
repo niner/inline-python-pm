@@ -11,6 +11,7 @@ $VERSION = '0.38';
 		py_new_object
 		py_call_method 
 		py_call_function
+                py_is_tuple
 		py_bind_class
 		py_bind_func
 		py_study_package
