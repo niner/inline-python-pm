@@ -1,5 +1,15 @@
 Revision history for Perl extension Inline::Python.
 
+0.39  Wed Mar 09 13:00:00 CET 2010 (Stefan Seifert)
+	- Added py_is_tuple and made Pl2Py recognize an array ref that has
+	  been a tuple before in Python.
+	- Fixed memory corruption on a Python function calling a Perl function
+	  that changed the stack pointer.
+	- Fixed several memory leaks (scalars and dict keys).
+	- Fixed wrong refcount of return values in py_eval (RT #48081)
+	- Fixed accessing Unicode keys in a dict passed from Perl.
+	- Fixed compatability of t/30floats.t with Python 2.7.
+
 0.38  Thu Dec 02 14:00:00 CEST 2010 (Stefan Seifert)
 	- Fix Perl assertion fail if __getitem__ called multiple times
 	- Fix "Attempt to free unreferenced scalar" sometimes happening when
