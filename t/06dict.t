@@ -6,6 +6,7 @@ use Test::More tests => 6;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline Python => <<'END';
+# coding=utf-8
 
 class Foo:
     def __init__(self):
@@ -32,10 +33,7 @@ $obj->set_data({string => 'hello',
 	       });
 is($obj->get_data()->{string}, 'hello');
 is($obj->get_data()->{ütf8}, 'töst');
-TODO: {
-    local $TODO = 'I think this depends on Python being compiled in a certain way';
-    is($obj->get_data()->{ü}, 'ü');
-}
+is($obj->get_data()->{ü}, 'ü');
 
 is(access_dict({föö => 'bar'}), 'bar');
 my $dict = get_dict();
