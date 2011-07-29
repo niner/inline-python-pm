@@ -76,6 +76,7 @@ WriteMakefile(
 	      VERSION_FROM => 'Python.pm',
 	      PREREQ_PM => {
                             Inline         => 0.46,
+                            'Digest::MD5'  => 2.50,
                             'Data::Dumper' => 0,
                             'Test::More'   => 0,
                             Test           => 0,
