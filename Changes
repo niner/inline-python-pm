@@ -1,6 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
-0.39  Wed Mar 09 13:00:00 CET 2010 (Stefan Seifert)
+0.40  Fri Jul 29 16:30:00 CEST 2011 (Stefan Seifert)
+	- Finally fixed t/06dict.t allowing installation on many more machines
+
+0.39  Wed Mar 09 13:00:00 CET 2011 (Stefan Seifert)
 	- Added py_is_tuple and made Pl2Py recognize an array ref that has
 	  been a tuple before in Python.
 	- Fixed memory corruption on a Python function calling a Perl function
