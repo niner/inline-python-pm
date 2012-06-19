@@ -73,8 +73,8 @@ py_study_package(PYPKG="__main__")
   PyObject *keys;
   int len;
   int i;
-  AV* functions = newAV();
-  HV* classes = newHV();
+  AV* const functions = newAV();
+  HV* const classes = newHV();
  PPCODE:
   mod = PyImport_AddModule(PYPKG);
   dict = PyModule_GetDict(mod);
@@ -82,8 +82,8 @@ py_study_package(PYPKG="__main__")
   len = PyObject_Length(dict);
   Printf(("py_study_package: dict length: %i\n", len));
   for (i=0; i<len; i++) {
-    PyObject *key = PySequence_GetItem(keys,i);
-    PyObject *val = PyObject_GetItem(dict,key);
+    PyObject * const key = PySequence_GetItem(keys,i);
+    PyObject * const val = PyObject_GetItem(dict,key);
     if (PyCallable_Check(val)) {
 #ifdef I_PY_DEBUG
 	printf("py_study_package: #%i (%s) callable\n", i, PyString_AsString(key));
@@ -93,28 +93,28 @@ py_study_package(PYPKG="__main__")
 	printf("object type check gives: %i\n", PyType_Check(val));
 #endif
       if (PyFunction_Check(val)) {
-        char *name = PyString_AsString(key);
+        char * const name = PyString_AsString(key);
         Printf(("Found a function: %s\n", name));
 	av_push(functions, newSVpv(name,0));
       }
       /* elw: if we just could get it to go through here! */
       else if (PyType_Check(val) || PyClass_Check(val)) {
-        char *name = PyString_AsString(key);
-	PyObject *cls_dict = PyObject_GetAttrString(val,"__dict__");
-	PyObject *cls_keys = PyMapping_Keys(cls_dict);
-	int dict_len = PyObject_Length(cls_dict);
+        char * const name = PyString_AsString(key);
+	PyObject * const cls_dict = PyObject_GetAttrString(val,"__dict__");
+	PyObject * const cls_keys = PyMapping_Keys(cls_dict);
+	int const dict_len = PyObject_Length(cls_dict);
 	int j;
 
 	/* array of method names */
-	AV* methods = newAV();
+	AV * const methods = newAV();
 
 	Printf(("Found a class: %s\n", name));
 
 	/* populate the array */
 	for (j=0; j<dict_len; j++) {
-	  PyObject *cls_key = PySequence_GetItem(cls_keys,j);
-	  PyObject *cls_val = PyObject_GetItem(cls_dict,cls_key);
-	  char *fname = PyString_AsString(cls_key);
+	  PyObject * const cls_key = PySequence_GetItem(cls_keys,j);
+	  PyObject * const cls_val = PyObject_GetItem(cls_dict,cls_key);
+	  char * const fname = PyString_AsString(cls_key);
 	  if (PyFunction_Check(cls_val)) {
 	    Printf(("Found a method of %s: %s\n", name, fname));
 	    av_push(methods,newSVpv(fname,0));
@@ -187,9 +187,9 @@ py_call_function(PYPKG, FNAME, ...)
   PREINIT:
   int i;
 
-  PyObject *mod       = PyImport_AddModule(PYPKG);
-  PyObject *dict      = PyModule_GetDict(mod);
-  PyObject *func      = PyMapping_GetItemString(dict,FNAME);
+  PyObject * const mod       = PyImport_AddModule(PYPKG);
+  PyObject * const dict      = PyModule_GetDict(mod);
+  PyObject * const func      = PyMapping_GetItemString(dict,FNAME);
   PyObject *o         = NULL;
   PyObject *py_retval = NULL;
   PyObject *tuple     = NULL;
@@ -261,8 +261,8 @@ py_call_function(PYPKG, FNAME, ...)
       (GIMME_V == G_ARRAY) &&
 #endif
       SvROK(ret) && (SvTYPE(SvRV(ret)) == SVt_PVAV)) {
-    AV* av = (AV*)SvRV(ret);
-    int len = av_len(av) + 1;
+    AV* const av = (AV*)SvRV(ret);
+    int const len = av_len(av) + 1;
     int i;
     EXTEND(SP, len);
     for (i=0; i<len; i++) {
@@ -281,7 +281,7 @@ py_call_function_ref(FUNC, ...)
   PREINIT:
   int i;
 
-  PyObject *func = (PyObject *) SvIV(FUNC);
+  PyObject * const func = (PyObject *) SvIV(FUNC);
   PyObject *o         = NULL;
   PyObject *py_retval = NULL;
   PyObject *tuple     = NULL;
@@ -350,8 +350,8 @@ py_call_function_ref(FUNC, ...)
       (GIMME_V == G_ARRAY) &&
 #endif
       SvROK(ret) && (SvTYPE(SvRV(ret)) == SVt_PVAV)) {
-    AV* av = (AV*)SvRV(ret);
-    int len = av_len(av) + 1;
+    AV* const av = (AV*)SvRV(ret);
+    int const len = av_len(av) + 1;
     int i;
     EXTEND(SP, len);
     for (i=0; i<len; i++) {
@@ -459,8 +459,8 @@ py_call_method(_inst, mname, ...)
 #endif
       SvROK(ret) && (SvTYPE(SvRV(ret)) == SVt_PVAV)) {
     /* if it is an array, return the array elements ourselves. */
-    AV* av = (AV*)SvRV(ret);
-    int len = av_len(av) + 1;
+    AV* const av = (AV*)SvRV(ret);
+    int const len = av_len(av) + 1;
     int i;
     EXTEND(SP, len);
     for (i=0; i<len; i++) {
