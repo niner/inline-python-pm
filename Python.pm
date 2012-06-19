@@ -180,10 +180,6 @@ sub build {
     # Study the main namespace
     my %namespace = py_study_package('__main__');
 
-    warn "No functions or classes found!"
-      unless ((length @{$namespace{functions}}) > 0 and
-	      (length keys %{$namespace{classes}}) > 0);
-
     # Cache the results
     require Inline::denter;
     my $namespace = Inline::denter->new
