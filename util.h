@@ -1,3 +1,4 @@
+/* vim: set expandtab shiftwidth=4 softtabstop=4 cinoptions='\:2=2': */
 #ifndef __INL_PY_UTILS__
 #define __INL_PY_UTILS__
 #ifdef __cplusplus
@@ -28,7 +29,7 @@ extern "C" {
  * from perl-space.
  */
 typedef struct {
-  I32 key; /* to make sure it came from Inline */
+    I32 key; /* to make sure it came from Inline */
 } _inline_magic;
 
 #define INLINE_MAGIC_KEY 0x0DD515FD
