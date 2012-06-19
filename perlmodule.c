@@ -60,10 +60,10 @@ staticforward int PerlSub_setattr(PerlSub_object *self,
 /* methods of _perl_pkg */
 PyObject *
 newPerlPkg_object(PyObject *base, PyObject *package) {
-  PerlPkg_object *self = PyObject_NEW(PerlPkg_object, &PerlPkg_type);
-  char *bs = PyString_AsString(base);
-  char *pkg = PyString_AsString(package);
-  char *str = (char*)malloc((strlen(bs) + strlen(pkg) + strlen("::") + 1)
+  PerlPkg_object * const self = PyObject_NEW(PerlPkg_object, &PerlPkg_type);
+  char * const bs = PyString_AsString(base);
+  char * const pkg = PyString_AsString(package);
+  char * const str = (char*)malloc((strlen(bs) + strlen(pkg) + strlen("::") + 1)
 			    * sizeof(char));
 
   if(!self) {
@@ -94,8 +94,7 @@ PerlPkg_dealloc(PerlPkg_object *self) {
 static PyObject *
 PerlPkg_repr(PerlPkg_object *self, PyObject *args) {
   PyObject *s;
-  char *str;
-  str = (char*)malloc((strlen("<perl package: ''>")
+  char * const str = (char*)malloc((strlen("<perl package: ''>")
 		       + PyObject_Length(self->full)
 		       + 1) * sizeof(char));
   sprintf(str, "<perl package: '%s'>", PyString_AsString(self->full));
@@ -137,10 +136,10 @@ PerlPkg_getattr(PerlPkg_object *self, char *name) {
   
   /*** A Perl Package, Sub, or Method ***/
   else {
-    PyObject *tmp = PyString_FromString(name);
-    char *full_c = PyString_AsString(self->full);
+    PyObject * const tmp = PyString_FromString(name);
+    char * const full_c = PyString_AsString(self->full);
 
-    PyObject *res = perl_pkg_exists(full_c, name)
+    PyObject * const res = perl_pkg_exists(full_c, name)
       ? newPerlPkg_object(self->full, tmp)
       : newPerlSub_object(self->full, tmp, NULL);
 
@@ -188,7 +187,7 @@ DL_EXPORT(PyTypeObject) PerlPkg_type = {
 /* methods of _perl_obj */
 PyObject *
 newPerlObj_object(SV *obj, PyObject *package) {
-  PerlObj_object *self = PyObject_NEW(PerlObj_object, &PerlObj_type);
+  PerlObj_object * const self = PyObject_NEW(PerlObj_object, &PerlObj_type);
 
   if(!self) {
     PyErr_Format(PyExc_MemoryError, "Couldn't create Perl Obj object.\n");
@@ -215,8 +214,7 @@ PerlObj_dealloc(PerlObj_object *self) {
 static PyObject *
 PerlObj_repr(PerlObj_object *self, PyObject *args) {
   PyObject *s;
-  char *str;
-  str = (char*)malloc((strlen("<perl object: ''>")
+  char * const str = (char*)malloc((strlen("<perl object: ''>")
 		       + PyObject_Length(self->pkg)
 		       + 1) * sizeof(char));
   sprintf(str, "<perl object: '%s'>", PyString_AsString(self->pkg));
@@ -232,20 +230,20 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
     return get_perl_pkg_subs(self->pkg);
   }
   else if (strcmp(name,"__members__") == 0) {
-    PyObject *retval = PyList_New(0);
+    retval = PyList_New(0);
     return retval ? retval : NULL;
   }
   else if (strcmp(name,"__dict__") == 0) {
-    PyObject *retval = PyDict_New();
+    retval = PyDict_New();
     return retval ? retval : NULL;
   }
   else {
-    SV *obj = (SV*)SvRV(self->obj);
-    HV* pkg = SvSTASH(obj);
+    SV * const obj = (SV*)SvRV(self->obj);
+    HV * const pkg = SvSTASH(obj);
     /* probably a request for a method */
-    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
+    GV * const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
     if (gv && isGV(gv)) {
-      PyObject *py_name = PyString_FromString(name);
+      PyObject * const py_name = PyString_FromString(name);
       retval = newPerlMethod_object(self->pkg, py_name, self->obj);
       Py_DECREF(py_name);
     }
@@ -259,7 +257,7 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 	ENTER;
 	SAVETMPS;
 
-	SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+	SV * const rv = sv_2mortal(newRV((SV*)GvCV(gv)));
 
 	PUSHMARK(SP);
 	XPUSHs(self->obj);
@@ -268,7 +266,7 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
 
 	/* array context needed, so it's possible to return nothing (not even undef)
 	   if the attribute does not exist */
-	int count = call_sv(rv, G_ARRAY);
+	int const count = call_sv(rv, G_ARRAY);
 
 	SPAGAIN;
 
@@ -297,9 +295,9 @@ static PyObject*
 PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
   /* check if the object supports the __getitem__ protocol */
   PyObject *item = NULL;
-  char *name = PyString_AsString(PyObject_Str(key));
-  SV *obj = (SV*)SvRV(self->obj);
-  HV* pkg = SvSTASH(obj);
+  char * const name = PyString_AsString(PyObject_Str(key));
+  SV * const obj = (SV*)SvRV(self->obj);
+  HV * const pkg = SvSTASH(obj);
   GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getitem__", FALSE);
   if (gv && isGV(gv)) { /* __getitem__ supported! Let's see if the key is found. */
     dSP;
@@ -307,7 +305,7 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
     ENTER;
     SAVETMPS;
 
-    SV* rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+    SV * const rv = sv_2mortal(newRV((SV*)GvCV(gv)));
 
     PUSHMARK(SP);
     XPUSHs(self->obj);
@@ -316,7 +314,7 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
 
     /* array context needed, so it's possible to return nothing (not even undef)
        if the attribute does not exist */
-    int count = call_sv(rv, G_ARRAY);
+    int const count = call_sv(rv, G_ARRAY);
 
     SPAGAIN;
 
@@ -394,7 +392,7 @@ DL_EXPORT(PyTypeObject) PerlObj_type = {
 /* methods of _perl_sub */
 PyObject *
 newPerlSub_object(PyObject *package, PyObject *sub, SV *cv) {
-  PerlSub_object *self = PyObject_NEW(PerlSub_object, &PerlSub_type);
+  PerlSub_object * const self = PyObject_NEW(PerlSub_object, &PerlSub_type);
   char *str = NULL;
 
   if(!self) {
@@ -449,7 +447,7 @@ newPerlSub_object(PyObject *package, PyObject *sub, SV *cv) {
 
 PyObject *
 newPerlMethod_object(PyObject *package, PyObject *sub, SV *obj) {
-  PerlSub_object *self = (PerlSub_object*)newPerlSub_object(package, 
+  PerlSub_object * const self = (PerlSub_object*)newPerlSub_object(package,
 							    sub, NULL);
   self->obj = obj;
   SvREFCNT_inc(obj);
@@ -459,7 +457,7 @@ newPerlMethod_object(PyObject *package, PyObject *sub, SV *obj) {
 PyObject * newPerlCfun_object(PyObject* (*cfun)(PyObject *self, 
 						PyObject *args)) 
 {
-  PerlSub_object *self = PyObject_NEW(PerlSub_object, &PerlSub_type);
+  PerlSub_object * const self = PyObject_NEW(PerlSub_object, &PerlSub_type);
   self->pkg = NULL;
   self->sub = NULL;
   self->full = NULL;
@@ -486,7 +484,7 @@ static PyObject *
 PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
   dSP;
   int i;
-  int len = PyObject_Length(args);
+  int const len = PyObject_Length(args);
   int count;
   PyObject *retval;
 
@@ -501,21 +499,21 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
   if (self->obj) XPUSHs(self->obj);
 
   if (kw) { /* if keyword arguments are present, positional arguments get pushed as into an arrayref */
-    AV *positional = newAV();
+    AV * const positional = newAV();
     for (i=0; i<len; i++) {
-      SV *arg = Py2Pl(PyTuple_GetItem(args, i));
+      SV * const arg = Py2Pl(PyTuple_GetItem(args, i));
       av_push(positional, sv_isobject(arg) ? SvREFCNT_inc(arg) : arg);
     }
     XPUSHs((SV *) sv_2mortal((SV *) newRV_inc((SV *) positional)));
 
-    SV *kw_hash = Py2Pl(kw);
+    SV * const kw_hash = Py2Pl(kw);
     XPUSHs(kw_hash);
     sv_2mortal(kw_hash);
     sv_2mortal((SV *)positional);
   }
   else {
     for (i=0; i<len; i++) {
-      SV *arg = Py2Pl(PyTuple_GetItem(args, i));
+      SV * const arg = Py2Pl(PyTuple_GetItem(args, i));
       XPUSHs(arg);
       if (! sv_isobject(arg))
 	sv_2mortal(arg);
@@ -554,12 +552,12 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
     retval = Pl2Py(POPs);
   }
   else {
-    AV *lst = newAV();
+    AV * const lst = newAV();
     av_extend(lst, count);
     for (i = count - 1; i >= 0; i--) {
       av_store(lst, i, SvREFCNT_inc(POPs));
     }
-    SV *rv_lst = newRV_inc((SV*)lst);
+    SV * const rv_lst = newRV_inc((SV*)lst);
     retval = Pl2Py(rv_lst);
     SvREFCNT_dec(rv_lst);
     sv_2mortal((SV*)lst); /* this will get killed shortly */
@@ -575,13 +573,12 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
 static PyObject *
 PerlSub_repr(PerlSub_object *self, PyObject *args) {
   PyObject *s;
-  char *str;
-  str = (char*)malloc((strlen("<perl sub: ''>")
-		       + (self->full 
-			  ? PyObject_Length(self->full) 
+  char * const str = (char*)malloc((strlen("<perl sub: ''>")
+		       + (self->full
+			  ? PyObject_Length(self->full)
 			  : strlen("anonymous"))
 		       + 1) * sizeof(char));
-  sprintf(str, "<perl sub: '%s'>", (self->full 
+  sprintf(str, "<perl sub: '%s'>", (self->full
 				    ? PyString_AsString(self->full)
 				    : "anonymous"));
   s = PyString_FromString(str);
@@ -697,7 +694,7 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
   int i;
   int count;
   PyObject *retval;
-  PyObject *s = PyTuple_GetItem(args, 0);
+  PyObject * const s = PyTuple_GetItem(args, 0);
 
   if (!PyString_Check(s)) {
     return NULL;
@@ -725,11 +722,11 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
     Py_INCREF(retval);
   }
   else if (count == 1) {
-    SV* s = POPs;
+    SV * const s = POPs;
     retval = Pl2Py(s);
   }
   else {
-    AV *lst = newAV();
+    AV * const lst = newAV();
     for (i=0; i<count; i++) {
       av_push(lst, POPs);
     }
@@ -745,7 +742,7 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
 }
 
 static PyObject * special_perl_use(PyObject *ignored, PyObject *args) {
-  PyObject *s = PyTuple_GetItem(args, 0);
+  PyObject * const s = PyTuple_GetItem(args, 0);
   char *str;
 
   if(!PyString_Check(s)) {
@@ -769,7 +766,7 @@ static PyObject * special_perl_use(PyObject *ignored, PyObject *args) {
 }
 
 static PyObject * special_perl_require(PyObject *ignored, PyObject *args) {
-  PyObject *s = PyTuple_GetItem(args, 0);
+  PyObject * const s = PyTuple_GetItem(args, 0);
 
   if (!PyString_Check(s)) 
     return NULL;
@@ -785,7 +782,7 @@ static void
 create_perl()
 {
   int argc = 1;
-  char *argv[] = {
+  char * const argv[] = {
     "perl"
   };
 
