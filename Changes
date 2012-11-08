@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.41  Thu Nov 08 20:15:00 CET 2012 (Stefan Seifert)
+	- Fixed installation on systems only having a shared libpython
+	- Code cleanup
+
 0.40  Fri Jul 29 16:30:00 CEST 2011 (Stefan Seifert)
 	- Finally fixed t/06dict.t allowing installation on many more machines
 
