@@ -95,6 +95,7 @@ sub interrogate {
     $ref->{syslibs}   = get_config_var($ref, "LIBS");
     $ref->{incpath}   = get_config_var($ref, "INCLUDEPY");
     $ref->{libpath}   = get_config_var($ref, "LIBPL");
+    $ref->{ldlib}     = get_config_var($ref, "LDLIBRARY");
     $ref->{libpython} = get_config_var($ref, "LIBRARY");
     my $tmp = rindex($ref->{libpython}, '/') + 1;
     $ref->{libpython} = substr($ref->{libpython}, $tmp);
@@ -121,6 +122,11 @@ END
 
 sub sanity_check {
     my $ref = shift;
+
+    $ref->{libpython} = $ref->{ldlib}
+        if not -f join '/', $ref->{libpath}, $ref->{libpython}
+           and -f join '/', $ref->{libpath}, $ref->{ldlib};
+
     unless (-d $ref->{libpath} &&
 	    -d $ref->{incpath} &&
 	    (-f join '/', $ref->{libpath}, $ref->{libpython})
@@ -205,8 +211,12 @@ sub show_python_libs {
   my @py_libs = 
    (
    (map { $exe . $_ } '.a', '.so', '.lib'),
+   '/usr/lib64/libpython*.a',
+   '/usr/lib64/libpython*.so',
    '/usr/lib/libpython*.a',
    '/usr/lib/libpython*.so',
+   '/usr/lib64/python*/config/libpython*.a',
+   '/usr/lib64/python*/config/libpython*.so',
    '/usr/lib/python*/config/libpython*.a',
    '/usr/lib/python*/config/libpython*.so',
    '/usr/local/lib/libpython*.a',
