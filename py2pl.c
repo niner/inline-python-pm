@@ -211,6 +211,21 @@ SV *Py2Pl(PyObject * const obj) {
     }
 
     /* an int */
+    else if (PyBool_Check(obj)) {
+        Printf(("Py2Pl: boolean\n"));
+        if (obj == Py_True)
+            return py_true;
+        if (obj == Py_False)
+            return py_false;
+
+        croak(
+            "Internal error: Pl2Py() caught a bool that is not True or False!? at %s, line %i.\n",
+            __FILE__,
+            __LINE__
+        );
+    }
+
+    /* an int */
     else if (PyInt_Check(obj)) {
         SV * const sv = newSViv(PyInt_AsLong(obj));
         Printf(("Py2Pl: integer\n"));
@@ -279,16 +294,16 @@ PyObject *Pl2Py(SV * const obj) {
 
     /* an object */
     if (sv_isobject(obj)) {
-        /* First check if it's one of the Inline::Python::Boolean values */
-
-        if (obj == py_true)
-            return Py_True;
-        if (obj == py_false)
-            return Py_False;
-
         /* We know it's a blessed reference: */
 
         SV * const obj_deref = SvRV(obj);
+
+        /* First check if it's one of the Inline::Python::Boolean values */
+
+        if (obj == py_true || obj_deref == SvRV(py_true))
+            return Py_True;
+        if (obj == py_false || obj_deref == SvRV(py_false))
+            return Py_False;
 
         /*
          * Now it's time to check whether it's *really* a blessed Perl object,
