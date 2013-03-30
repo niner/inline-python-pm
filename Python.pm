@@ -374,4 +374,25 @@ sub call {
     return sub { Inline::Python::py_call_function_ref($$self, @_) };
 }
 
+package Inline::Python::Boolean;
+use overload bool => \&bool, '0+' => \&bool, '!' => \&negate, fallback => 1;
+
+our $true  = __PACKAGE__->new(1);
+our $false = __PACKAGE__->new(0);
+
+sub new {
+    my ($class, $value) = @_;
+    return bless \$value, $class;
+}
+
+sub bool {
+    my ($self) = @_;
+    return $$self;
+}
+
+sub negate {
+    my ($self) = @_;
+    return $self ? $false : $true;
+}
+
 1;

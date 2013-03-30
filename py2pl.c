@@ -10,6 +10,9 @@
 #include "perlmodule.h"
 #endif
 
+SV* py_true;
+SV* py_false;
+
 /****************************
  * SV* Py2Pl(PyObject *obj)
  *
@@ -276,18 +279,26 @@ PyObject *Pl2Py(SV * const obj) {
 
     /* an object */
     if (sv_isobject(obj)) {
+        /* First check if it's one of the Inline::Python::Boolean values */
 
-        /* We know it's a blessed reference:
+        if (obj == py_true)
+            return Py_True;
+        if (obj == py_false)
+            return Py_False;
+
+        /* We know it's a blessed reference: */
+
+        SV * const obj_deref = SvRV(obj);
+
+        /*
          * Now it's time to check whether it's *really* a blessed Perl object,
          * or whether it's a blessed Python object with '~' magic set.
          * If '~' magic is set, we 'unwrap' it into its Python object.
          * If not, we wrap it up in a PerlObj_object. */
 
-        SV * const obj_deref = SvRV(obj);
-
         /* check for magic! */
-
         MAGIC * const mg = mg_find(obj_deref, '~');
+
         if (mg && Inline_Magic_Check(mg->mg_ptr)) {
             IV const ptr = SvIV(obj_deref);
             if (!ptr) {

@@ -58,6 +58,8 @@ void do_pyinit() {
 MODULE = Inline::Python   PACKAGE = Inline::Python
 
 BOOT:
+py_true  = perl_get_sv("Inline::Python::Boolean::true",  FALSE);
+py_false = perl_get_sv("Inline::Python::Boolean::false", FALSE);
 #ifdef CREATE_PYTHON
 do_pyinit();
 #endif
