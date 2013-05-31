@@ -110,8 +110,7 @@ SV *Py2Pl(PyObject * const obj) {
         priv.key = INLINE_MAGIC_KEY;
         sv_magic(inst, inst, PERL_MAGIC_ext, (char *) &priv, sizeof(priv));
         MAGIC * const mg = mg_find(inst, PERL_MAGIC_ext);
-        mg->mg_virtual = (MGVTBL *) malloc(sizeof(MGVTBL));
-        mg->mg_virtual->svt_free = free_inline_py_obj;
+        mg->mg_virtual = &inline_mg_vtbl;
 
         sv_setiv(inst, (IV) obj);
         /*SvREADONLY_on(inst); */ /* to uncomment this means I can't
@@ -242,8 +241,7 @@ SV *Py2Pl(PyObject * const obj) {
         priv.key = INLINE_MAGIC_KEY;
         sv_magic(inst, inst, '~', (char *) &priv, sizeof(priv));
         MAGIC * const mg = mg_find(inst, '~');
-        mg->mg_virtual = (MGVTBL *) malloc(sizeof(MGVTBL));
-        mg->mg_virtual->svt_free = free_inline_py_obj;
+        mg->mg_virtual = &inline_mg_vtbl;
 
         sv_setiv(inst, (IV) obj);
         /*SvREADONLY_on(inst); */ /* to uncomment this means I can't

@@ -42,6 +42,7 @@ extern DL_IMPORT(int)	     perl_pkg_exists(char *, char *);
 extern DL_IMPORT(PyObject *) perl_sub_exists(PyObject *, PyObject *);
 extern DL_IMPORT(int)        py_is_tuple(SV *arr);
 
+extern MGVTBL inline_mg_vtbl;
 /* This is called when Perl deallocates a PerlObj object */
 extern int free_inline_py_obj(pTHX_ SV* obj, MAGIC *mg);
 
