@@ -222,7 +222,7 @@ sub load {
 
     # Bind it all
     py_bind_func($o->{API}{pkg} . "::$_", '__main__', $_)
-      for (@{ $o->{ILSM}{namespace}{functions} || {} });
+      for (@{ $o->{ILSM}{namespace}{functions} || [] });
     py_bind_class($o->{API}{pkg} . "::$_", '__main__', $_,
 		  @{$o->{ILSM}{namespace}{classes}{$_}})
       for keys %{ $o->{ILSM}{namespace}{classes} || {} };
