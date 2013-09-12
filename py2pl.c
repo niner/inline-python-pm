@@ -345,18 +345,7 @@ PyObject *Pl2Py(SV * const obj) {
     }
     /* A floating-point number */
     else if (SvNOK(obj)) {
-        PyObject * const tmp = PyString_FromString(SvPV_nolen(obj));
-        Printf(("float\n"));
-        if (tmp)
-            o = PyNumber_Float(tmp);
-        else {
-            fprintf(stderr, "Internal Error --");
-            fprintf(stderr, "your Perl string \"%s\" could not \n",
-                    SvPV_nolen(obj));
-            fprintf(stderr, "be converted to a Python string\n");
-            o = PyFloat_FromDouble((double) 0);
-        }
-        Py_DECREF(tmp);
+        o = PyFloat_FromDouble(SvNV(obj));
     }
     /* A string */
     else if (SvPOKp(obj)) {
