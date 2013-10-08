@@ -299,9 +299,9 @@ PyObject *Pl2Py(SV * const obj) {
         /* First check if it's one of the Inline::Python::Boolean values */
 
         if (obj == py_true || obj_deref == SvRV(py_true))
-            return Py_True;
+            Py_RETURN_TRUE;
         if (obj == py_false || obj_deref == SvRV(py_false))
-            return Py_False;
+            Py_RETURN_FALSE;
 
         /*
          * Now it's time to check whether it's *really* a blessed Perl object,
