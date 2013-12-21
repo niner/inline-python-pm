@@ -188,6 +188,19 @@ need: calling methods, in this case.
 Exceptions thrown in Python code get translated to Perl exceptions which you can
 catch using eval.
 
+=head1 Boolean
+
+Python supports a Boolean type and two constants False and True. If one of
+these is passed from Python to Perl, the value is represented by an
+Inline::Python::Boolean object that uses overload to behave like 1 or undef
+in boolean context in Perl. When this object is passed back to Python, it
+is translated back to the False or True constant it originated from.
+
+To pass a Boolean value that originated from Perl to Python use the two
+constants C<$Inline::Python::Boolean::true> and
+C<$Inline::Python::Boolean::false> if it is important that the value is
+of type Boolean in Python.
+
 =head1 Using Perl inside Python (inside Perl)
 
 This section doesn't talk at all about C<Inline::Python>. It's about how
