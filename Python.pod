@@ -148,7 +148,7 @@ accessible only through its class methods.
 
   # Class is defined as 'def Class(float):'
   my $obj = Class->new(4);
-  print $$obj "\n"; # will NOT print '4.0'
+  print $$obj, "\n"; # will NOT print '4.0'
 
 =head2 New-Style
 
@@ -165,14 +165,14 @@ Of course you can! Check this out:
        class Bar:
            def __init__(self):
                print "new Bar()"
-           def tank():
+           def tank(self):
                return 10
        return Bar()
 
    END
 
    my $o = Foo();
-   $o->tank();
+   print $o->tank(), "\n";
 
 In this example, C<Bar> isn't imported because it isn't a global -- it's hidden
 inside the function Foo(). But Foo() is imported into Perl, and it returns an 
