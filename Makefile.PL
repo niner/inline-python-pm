@@ -14,24 +14,42 @@ usage() if $help;
 #============================================================================
 # What python are we going to try?
 #============================================================================
-my @pythons;
-my $sep = $^O eq 'MSWin32' ? ";" : ":";
-for $p (split /$sep/, $ENV{PATH}) {
-    $p =~ s/^~/$ENV{HOME}/;
-    $p .= "/python";
-    push @pythons, { path => $p } if -f $p && -x $p;
+my $sel = $ENV{INLINE_PYTHON_EXECUTABLE};
+unless ($sel) {
+    my @pythons;
+    my $sep = $^O eq 'MSWin32' ? ";" : ":";
+    for $p (split /$sep/, $ENV{PATH}) {
+        $p =~ s/^~/$ENV{HOME}/;
+        $p .= "/python";
+        push @pythons, { path => $p } if -f $p && -x $p;
+    }
+
+    # Keep them in PATH order.
+    # @pythons = sort { $a->{path} cmp $b->{path} } @pythons;
+
+    my $num = 1;
+    print "Found these python executables on your PATH:\n";
+    print $num++ . ". " . $_->{path} . "\n" for @pythons;
+
+    if (@pythons == 1 and not $sel) {
+        $sel = $pythons[0];
+        print "Using the only python executable I could find\n";
+        print 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
+            . " the full path to your python executable to override this selection.\n";
+    }
+    unless ($sel) {
+        $sel = prompt("Use which?", '1');
+        if ($sel =~ /^\d+$/) {
+            die 'Invalid number. Please enter only numbers from 1 to ' . ($num - 1)
+                . " or the full path to your python executable.\n"
+                . 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
+                . " the full path to your python executable to avoid this question.\n"
+                if $sel > ($num - 1);
+            $sel = $pythons[$sel - 1];
+        }
+    }
 }
-
-# Keep them in PATH order.
-#@pythons = sort { $a->{path} cmp $b->{path} } @pythons;
-
-my $num = 1;
-print "Found these python executables on your PATH:\n";
-print $num++ . ". " . $_->{path} . "\n" for @pythons;
-
-my $sel = prompt("Use which?", '1');
-$sel = $pythons[$sel-1] if $sel =~ /^\d+$/;
-$sel = { path => $sel } unless ref $sel eq 'HASH';
+$sel = { path => $sel } unless ref $sel eq 'HASH'; # in case the user entered a path
 
 print "Using $sel->{path}\n";
 
