@@ -750,6 +750,10 @@ This version of Inline::Python has been tested with Python versions from 2.5 to
 2.7. It may work on older versions but will almost certainly not work with
 Python 3.
 
+=head1 SOURCE REPOSITORY
+
+The Github repository for this project is at L<https://github.com/niner/inline-python-pm>. Pull requests are welcome.
+
 =head1 AUTHOR
 
 Neil Watkiss <NEILW@cpan.org>
