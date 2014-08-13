@@ -100,6 +100,16 @@ WriteMakefile(
                             Test           => 0,
 			   },
 	      OBJECT => 'Python.o py2pl.o perlmodule.o util.o',
+	      META_MERGE => {
+			    "meta-spec" => { version => 2 },
+			    resources => {
+			     repository => {
+			      type => 'git',
+			      url => 'http://github.com/niner/inline-python-pm.git',
+			      web => 'http://github.com/niner/inline-python-pm',
+			     },
+			    },
+			   },
 	      clean => {FILES => 'blib_test/'},
 	     );
 
