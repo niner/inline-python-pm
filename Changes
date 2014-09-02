@@ -1,11 +1,15 @@
 Revision history for Perl extension Inline::Python.
 
-0.43 Tue  Sep 02 11:00:00 CEST 2014 (Stefan Seifert)
+0.44 Tue  Sep 02 11:00:00 CEST 2014 (Stefan Seifert)
 	- Fix memory corruption introduced with boolean support
 	- Document the usage of Inline::Python::Boolean
 	- Minor doc fixes by Zakariyya Mughal
 	- Allow non-interactive installation in Makefile.PL
 	- Add links to the github repo by mohawk2
+
+0.43 Thu Sep 12 23:00:00 CEST 2013 (Stefan Seifert)
+        - Fixed converting floats from Perl to Python with different locale
+        - Fixed RT #87962
 
 0.42  Fri May 31 20:20:00 CEST 2013 (Stefan Seifert)
 	- Python booleans passed through Perl make it back to Python as Booleans
