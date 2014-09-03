@@ -343,6 +343,43 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
 
 static int
 PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
+    /* check if the object supports the __cmp__ protocol */
+    SV * const obj = (SV*)SvRV(o1->obj);
+    HV * const pkg = SvSTASH(obj);
+    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__cmp__", FALSE);
+    if (gv && isGV(gv)) {
+        int retval;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        SV * const rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+
+        PUSHMARK(SP);
+        XPUSHs(o1->obj);
+        XPUSHs(o2->obj);
+        PUTBACK;
+
+        int const count = call_sv(rv, G_SCALAR);
+
+        SPAGAIN;
+
+        if (count > 1)
+            croak("__cmp__ may only return a single scalar!\n");
+
+        if (count == 1) { /* attribute exists! Now give the value back to Python */
+            SV * const result = POPs;
+            if(!SvIOK(result))
+                croak("__cmp__ must return an integer!\n");
+            retval = SvIV(result);
+        }
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+        return retval;
+    }
     if (SvRV(o1->obj) == SvRV(o2->obj)) /* just compare the dereferenced object pointers */
         return 0;
     return 1;
