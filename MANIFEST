@@ -44,6 +44,7 @@ t/29named_params.t
 t/30floats.t
 t/31stringification.t
 t/32boolean.t
+t/cmp.t
 TESTED
 ToDo
 util.c

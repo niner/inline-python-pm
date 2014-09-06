@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.45 Sat  Sep 06 10:30:00 CEST 2014 (Stefan Seifert)
+	- Support implementing __cmp__ in Perl
+	- Skip test requiring Parse::RecDescent if the module is not installed
+
 0.44 Tue  Sep 02 11:00:00 CEST 2014 (Stefan Seifert)
 	- Fix memory corruption introduced with boolean support
 	- Document the usage of Inline::Python::Boolean
