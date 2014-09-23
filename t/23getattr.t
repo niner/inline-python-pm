@@ -41,7 +41,7 @@ def test_attrs(foo):
 def test_noattrs(bar):
     try:
         perl.warn(bar.test)
-    except KeyError:
+    except AttributeError:
         return 1
     return 0
 

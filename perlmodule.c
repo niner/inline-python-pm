@@ -281,10 +281,10 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
                 FREETMPS;
                 LEAVE;
             }
-            if (! retval) { /* give up and raise a KeyError */
+            if (! retval) { /* give up and raise a AttributeError */
                 char attribute_error[strlen(name) + 21];
                 sprintf(attribute_error, "attribute %s not found", name);
-                PyErr_SetString(PyExc_KeyError, attribute_error);
+                PyErr_SetString(PyExc_AttributeError, attribute_error);
             }
         }
         return retval;
