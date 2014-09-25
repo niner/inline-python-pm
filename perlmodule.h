@@ -48,7 +48,18 @@ extern PyTypeObject PerlPkg_type, PerlObj_type, PerlSub_type;
 #define PerlObjObject_Check(v) (Py_TYPE(v) == &PerlObj_type)
 #define PerlSubObject_Check(v) (Py_TYPE(v) == &PerlSub_type)
 
+#if PY_MAJOR_VERSION >= 3
+#define PKG_EQ(obj,pkg) (strcmp(PyBytes_AsString((obj)->full), (pkg))==0)
+#else
 #define PKG_EQ(obj,pkg) (strcmp(PyString_AsString((obj)->full), (pkg))==0)
+#endif
+
+/* Macro for returning Py_NotImplemented from a function */
+#ifndef Py_RETURN_NOTIMPLEMENTED /* Python 3.1 does not define this*/
+#define Py_RETURN_NOTIMPLEMENTED \
+    return Py_INCREF(Py_NotImplemented), Py_NotImplemented
+#endif
+
 
 /***************************************
  *         METHOD DECLARATIONS         *

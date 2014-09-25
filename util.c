@@ -43,7 +43,11 @@ int free_inline_py_obj(pTHX_ SV* obj, MAGIC *mg)
 }
 
 PyObject * get_perl_pkg_subs(PyObject *package) {
+#if PY_MAJOR_VERSION >= 3
+    char * const pkg = PyBytes_AsString(package);
+#else
     char * const pkg = PyString_AsString(package);
+#endif
     PyObject * const retval = PyList_New(0);
     HV * const hash = perl_get_hv(pkg, 0);
     int const len = hv_iterinit(hash);
@@ -56,7 +60,11 @@ PyObject * get_perl_pkg_subs(PyObject *package) {
         char * const test = (char*)malloc((strlen(pkg) + strlen(key) + 1)*sizeof(char));
         sprintf(test,"%s%s",pkg,key);
         if (perl_get_cv(test,0)) {
+#if PY_MAJOR_VERSION >= 3
+            PyList_Append(retval, PyUnicode_FromString(key));
+#else
             PyList_Append(retval, PyString_FromString(key));
+#endif
         }
         free(test);
     }
@@ -84,8 +92,13 @@ int perl_pkg_exists(char *base, char *pkg) {
 }
 
 PyObject * perl_sub_exists(PyObject *package, PyObject *usub) {
+#if PY_MAJOR_VERSION >= 3
+    char * const pkg = PyBytes_AsString(package);
+    char * const sub = PyBytes_AsString(usub);
+#else
     char * const pkg = PyString_AsString(package);
     char * const sub = PyString_AsString(usub);
+#endif
     PyObject * retval = Py_None;
 
     char * const qsub = (char*)malloc((strlen(pkg) + strlen(sub) + 1)*sizeof(char));
