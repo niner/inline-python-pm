@@ -491,7 +491,7 @@ py_has_attr(_inst, key)
 
   PPCODE:
 
-    Printf(("get_object_data\n"));
+    Printf(("get_object_data py_get_attr\n"));
 
     if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
         inst = (PyObject*)SvIV(SvRV(_inst));
@@ -523,7 +523,7 @@ py_get_attr(_inst, key)
 
   PPCODE:
 
-    Printf(("get_object_data\n"));
+    Printf(("get_object_data py_has_attr\n"));
 
     if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
         inst = (PyObject*)SvIV(SvRV(_inst));

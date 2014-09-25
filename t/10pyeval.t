@@ -7,7 +7,7 @@ py_eval(<<END);
 class Bar:
     def __init__(self): 
         self.data = {}
-        print "new Bar being created!"
+        print("new Bar being created!")
     def put(self, key, val): self.data[key] = val
     def get(self, key): 
         try: return self.data[key]

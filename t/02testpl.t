@@ -27,14 +27,14 @@ class A:
     def __init__(self):
         self.data = {}
     def foof(self):
-        print "Hello, back in Python..."
+        print("Hello, back in Python...")
 
 def gen(): return A()
 
 END
 
 ok(1);
-py_eval("print dir(perl)");
+py_eval("print(dir(perl))");
 ok(1);
 my $o = new A;
 ok(1);
@@ -44,7 +44,7 @@ print "It's gone now...\n";
 py_eval(<<END);
 o = perl.Fart.Fiddle.new()
 if o: perl.ok(1)
-print o
+print(o)
 o.foof({'neil': 1}, ['laura', 1], 12)
 perl.ok(1)
 perl.eval('print qq{Hello. This is Neil\\n}')
