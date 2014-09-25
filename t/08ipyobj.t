@@ -12,18 +12,18 @@ py_eval <<END;
 
 class Foo:
     def __init__(self):
-        print "New foo being created!"
-	self.data = {}
+        print("New foo being created!")
+        self.data = {}
     def watchit(self):
-        print "Watching it, sir!"
-	print self.data
+        print("Watching it, sir!")
+        print(self.data)
     def put(self, key, value):
-	self.data[key] = value
+        self.data[key] = value
     def get(self, key):
-	try:
-	    return self.data[key]
-	except KeyError:
-	    return None
+        try:
+            return self.data[key]
+        except KeyError:
+            return None
 
 END
 

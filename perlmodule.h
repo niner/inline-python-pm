@@ -33,11 +33,20 @@ typedef struct {
     PyObject* (*cfun)(PyObject *self, PyObject *args); /* a regular Python function */
 } PerlSub_object;
 
-extern DL_IMPORT(PyTypeObject) PerlPkg_type, PerlObj_type, PerlSub_type;
+extern PyTypeObject PerlPkg_type, PerlObj_type, PerlSub_type;
 
-#define PerlPkgObject_Check(v) ((v)->ob_type == &PerlPkg_type)
-#define PerlObjObject_Check(v) ((v)->ob_type == &PerlObj_type)
-#define PerlSubObject_Check(v) ((v)->ob_type == &PerlSub_type)
+#ifndef PyVarObject_HEAD_INIT  /* Python 2.5 does not define this*/
+    #define PyVarObject_HEAD_INIT(type, size) \
+        PyObject_HEAD_INIT(type) size,
+#endif
+
+#ifndef Py_TYPE /* Python 2.5 does not define this*/
+#define Py_TYPE(ob) 			(((PyObject*)(ob))->ob_type)
+#endif
+
+#define PerlPkgObject_Check(v) (Py_TYPE(v) == &PerlPkg_type)
+#define PerlObjObject_Check(v) (Py_TYPE(v) == &PerlObj_type)
+#define PerlSubObject_Check(v) (Py_TYPE(v) == &PerlSub_type)
 
 #define PKG_EQ(obj,pkg) (strcmp(PyString_AsString((obj)->full), (pkg))==0)
 
@@ -46,16 +55,15 @@ extern DL_IMPORT(PyTypeObject) PerlPkg_type, PerlObj_type, PerlSub_type;
  ***************************************/
 
 /* methods of _perl_pkg */
-extern DL_IMPORT(PyObject *) newPerlPkg_object(PyObject *, PyObject *);
+extern PyObject * newPerlPkg_object(PyObject *, PyObject *);
 
 /* methods of _perl_obj */
-extern DL_IMPORT(PyObject *) newPerlObj_object(SV *, PyObject *);
+extern PyObject * newPerlObj_object(SV *, PyObject *);
 
 /* methods of _perl_sub */
-extern DL_IMPORT(PyObject *) newPerlSub_object(PyObject *, PyObject *, SV *);
-extern DL_IMPORT(PyObject *) newPerlMethod_object(PyObject*,PyObject*,SV*);
-extern DL_IMPORT(PyObject *) newPerlCfun_object(PyObject* (*)(PyObject *,
-							      PyObject *));
+extern PyObject * newPerlSub_object(PyObject *, PyObject *, SV *);
+extern PyObject * newPerlMethod_object(PyObject*, PyObject*, SV*);
+extern PyObject * newPerlCfun_object(PyObject* (*)(PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

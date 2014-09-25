@@ -51,4 +51,4 @@ is($foo->{get_foo}->(), 'foo', 'Returned method works');
 
 my $killer = KillMe->new();
 ok(not(eval { $killer->{foo} }), 'survived KeyError in __getattr__');
-is($@, "exceptions.KeyError: 'foo' at line 19\n", 'Got the KeyError');
+like($@, qr/KeyError: 'foo' at line 19/, 'Got the KeyError');

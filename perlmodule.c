@@ -26,32 +26,31 @@ staticforward PyObject * special_perl_require(PyObject *, PyObject *);
  *         METHOD DECLARATIONS         *
  ***************************************/
 
-DL_EXPORT(PyObject) * newPerlPkg_object(PyObject *base, PyObject *pkg);
+PyObject * newPerlPkg_object(PyObject *base, PyObject *pkg);
 staticforward void       PerlPkg_dealloc(PerlPkg_object *self);
 staticforward PyObject * PerlPkg_repr(PerlPkg_object *self, PyObject *args);
 staticforward PyObject * PerlPkg_getattr(PerlPkg_object *self, char *name);
 
-DL_EXPORT(PyObject *) newPerlObj_object(SV *obj, PyObject *pkg);
+PyObject * newPerlObj_object(SV *obj, PyObject *pkg);
 staticforward void       PerlObj_dealloc(PerlObj_object *self);
 staticforward PyObject * PerlObj_repr(PerlObj_object *self, PyObject *args);
 staticforward PyObject * PerlObj_getattr(PerlObj_object *self, char *name);
 staticforward PyObject * PerlObj_mp_subscript(PerlObj_object *self, PyObject *key);
 
-DL_EXPORT(PyObject *) newPerlSub_object(PyObject *base,
-					PyObject *pkg,
-					SV *cv);
-DL_EXPORT(PyObject *) newPerlMethod_object(PyObject *base,
-					   PyObject *pkg,
-					   SV *obj);
-DL_EXPORT(PyObject *) newPerlCfun_object(PyObject* (*cfun)(PyObject *self, 
-							   PyObject *args));
+PyObject * newPerlSub_object(PyObject *base,
+                             PyObject *pkg,
+                             SV *cv);
+PyObject * newPerlMethod_object(PyObject *base,
+                                PyObject *pkg,
+                                SV *obj);
+PyObject * newPerlCfun_object(PyObject* (*cfun)(PyObject *self, PyObject *args));
 staticforward void       PerlSub_dealloc(PerlSub_object *self);
 staticforward PyObject * PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw);
 staticforward PyObject * PerlSub_repr(PerlSub_object *self, PyObject *args);
 staticforward PyObject * PerlSub_getattr(PerlSub_object *self, char *name);
 staticforward int PerlSub_setattr(PerlSub_object *self, 
-				  char *name, 
-				  PyObject *value);
+                                  char *name, 
+                                  PyObject *value);
 
 /**************************************
  *         METHOD DEFINITIONS         *
@@ -149,8 +148,13 @@ PerlPkg_getattr(PerlPkg_object *self, char *name) {
     }
 }
 
+static PyObject * module_dir(PerlPkg_object *self, PyObject *args) {
+    return get_perl_pkg_subs(self->full);
+}
+
 static struct PyMethodDef PerlPkg_methods[] = {
-    {NULL, NULL} /* sentinel */
+    {"__dir__", (PyCFunction)module_dir, METH_NOARGS, NULL},
+    {NULL} /* sentinel */
 };
 
 /* doc string */
@@ -159,9 +163,8 @@ static char PerlPkg_type__doc__[] =
 ;
 
 /* type definition */
-DL_EXPORT(PyTypeObject) PerlPkg_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                            /*ob_size*/
+PyTypeObject PerlPkg_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_perl_pkg",                  /*tp_name*/
     sizeof(PerlPkg_object),       /*tp_basicsize*/
     0,                            /*tp_itemsize*/
@@ -178,10 +181,18 @@ DL_EXPORT(PyTypeObject) PerlPkg_type = {
     (hashfunc)0,                  /*tp_hash*/
     (ternaryfunc)0,               /*tp_call*/
     (reprfunc)PerlPkg_repr,       /*tp_str*/
-
-    /* Space for future expansion */
-    0L,0L,0L,0L,
+    0,                         /* tp_getattro */
+    0,                         /* tp_setattro */
+    0,                         /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,        /* tp_flags */
     PerlPkg_type__doc__, /* Documentation string */
+    (traverseproc)0,           /* tp_traverse */
+    (inquiry)0,                /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    PerlPkg_methods,           /* tp_methods */
 };
 
 /* methods of _perl_obj */
@@ -295,7 +306,8 @@ static PyObject*
 PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
     /* check if the object supports the __getitem__ protocol */
     PyObject *item = NULL;
-    char * const name = PyString_AsString(PyObject_Str(key));
+    PyObject *key_str = PyObject_Str(key);  /* new reference */
+    char * const name = PyString_AsString(key_str);
     SV * const obj = (SV*)SvRV(self->obj);
     HV * const pkg = SvSTASH(obj);
     GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getitem__", FALSE);
@@ -336,8 +348,9 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
         }
     }
     else {
-        PyErr_Format(PyExc_TypeError, "'%.200s' object is unsubscriptable", self->ob_type->tp_name);
+        PyErr_Format(PyExc_TypeError, "'%.200s' object is unsubscriptable", Py_TYPE(self)->tp_name);
     }
+    Py_DECREF(key_str);
     return item;
 }
 
@@ -385,8 +398,13 @@ PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
     return 1;
 }
 
+static PyObject * object_dir(PerlObj_object *self, PyObject *args) {
+    return get_perl_pkg_subs(self->pkg);
+}
+
 static struct PyMethodDef PerlObj_methods[] = {
-    {NULL, NULL} /* sentinel */
+    {"__dir__", (PyCFunction)object_dir, METH_NOARGS, NULL},
+    {NULL} /* sentinel */
 };
 
 /* doc string */
@@ -401,9 +419,8 @@ PyMappingMethods mp_methods = {
 };
 
 /* type definition */
-DL_EXPORT(PyTypeObject) PerlObj_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                            /*ob_size*/
+PyTypeObject PerlObj_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_perl_obj",                  /*tp_name*/
     sizeof(PerlObj_object),       /*tp_basicsize*/
     0,                            /*tp_itemsize*/
@@ -424,6 +441,13 @@ DL_EXPORT(PyTypeObject) PerlObj_type = {
     /* Space for future expansion */
     0L,0L,0L,0L,
     PerlObj_type__doc__, /* Documentation string */
+    (traverseproc)0,           /* tp_traverse */
+    (inquiry)0,                /* tp_clear */
+    0,                          /* unused */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    PerlObj_methods,           /* tp_methods */
 };
 
 /* methods of _perl_sub */
@@ -695,9 +719,8 @@ static char PerlSub_type__doc__[] =
 ;
 
 /* type definition */
-DL_EXPORT(PyTypeObject) PerlSub_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                            /*ob_size*/
+PyTypeObject PerlSub_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_perl_sub",                  /*tp_name*/
     sizeof(PerlSub_object),       /*tp_basicsize*/
     0,                            /*tp_itemsize*/
@@ -839,9 +862,8 @@ create_perl()
 }
 #endif
 
-DL_EXPORT(void)
-initperl(void)
-{
+void
+initperl(void){
     PyObject *m, *d, *p;
     PyObject *dummy1 = PyString_FromString(""), 
              *dummy2 = PyString_FromString("main");
