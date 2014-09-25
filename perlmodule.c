@@ -60,8 +60,14 @@ staticforward int PerlSub_setattr(PerlSub_object *self,
 PyObject *
 newPerlPkg_object(PyObject *base, PyObject *package) {
     PerlPkg_object * const self = PyObject_NEW(PerlPkg_object, &PerlPkg_type);
+
+#if PY_MAJOR_VERSION >= 3
+    char * const bs = PyBytes_AsString(base);
+    char * const pkg = PyBytes_AsString(package);
+#else
     char * const bs = PyString_AsString(base);
     char * const pkg = PyString_AsString(package);
+#endif
     char * const str = (char*)malloc((strlen(bs) + strlen(pkg) + strlen("::") + 1)
             * sizeof(char));
 
@@ -76,7 +82,11 @@ newPerlPkg_object(PyObject *base, PyObject *package) {
     Py_INCREF(package);
     self->base = base;
     self->pkg = package;
+#if PY_MAJOR_VERSION >= 3
+    self->full = PyBytes_FromString(str);
+#else
     self->full = PyString_FromString(str);
+#endif
 
     free(str);
     return (PyObject*)self;
@@ -96,8 +106,13 @@ PerlPkg_repr(PerlPkg_object *self, PyObject *args) {
     char * const str = (char*)malloc((strlen("<perl package: ''>")
                 + PyObject_Length(self->full)
                 + 1) * sizeof(char));
+#if PY_MAJOR_VERSION >= 3
+    sprintf(str, "<perl package: '%s'>", PyBytes_AsString(self->full));
+    s = PyUnicode_FromString(str);
+#else
     sprintf(str, "<perl package: '%s'>", PyString_AsString(self->full));
     s = PyString_FromString(str);
+#endif
     free(str);
     return s;
 }
@@ -135,8 +150,13 @@ PerlPkg_getattr(PerlPkg_object *self, char *name) {
 
     /*** A Perl Package, Sub, or Method ***/
     else {
+#if PY_MAJOR_VERSION >= 3
+        PyObject * const tmp = PyBytes_FromString(name);
+        char * const full_c = PyBytes_AsString(self->full);
+#else
         PyObject * const tmp = PyString_FromString(name);
         char * const full_c = PyString_AsString(self->full);
+#endif
 
         PyObject * const res = perl_pkg_exists(full_c, name)
             ? newPerlPkg_object(self->full, tmp)
@@ -173,7 +193,11 @@ PyTypeObject PerlPkg_type = {
     (printfunc)0,                 /*tp_print*/
     (getattrfunc)PerlPkg_getattr, /*tp_getattr*/
     (setattrfunc)0,               /*tp_setattr*/
+#if PY_MAJOR_VERSION < 3
     (cmpfunc)0,                   /*tp_compare*/
+#else
+    0,                            /*reserved*/
+#endif
     (reprfunc)PerlPkg_repr,       /*tp_repr*/
     0,                            /*tp_as_number*/
     0,                            /*tp_as_sequence*/
@@ -228,8 +252,13 @@ PerlObj_repr(PerlObj_object *self, PyObject *args) {
     char * const str = (char*)malloc((strlen("<perl object: ''>")
                 + PyObject_Length(self->pkg)
                 + 1) * sizeof(char));
+#if PY_MAJOR_VERSION >= 3
+    sprintf(str, "<perl object: '%s'>", PyBytes_AsString(self->pkg));
+    s = PyUnicode_FromString(str);
+#else
     sprintf(str, "<perl object: '%s'>", PyString_AsString(self->pkg));
     s = PyString_FromString(str);
+#endif
     free(str);
     return s;
 }
@@ -254,7 +283,11 @@ PerlObj_getattr(PerlObj_object *self, char *name) {
         /* probably a request for a method */
         GV * const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, name, TRUE);
         if (gv && isGV(gv)) {
+#if PY_MAJOR_VERSION >= 3
+            PyObject * const py_name = PyBytes_FromString(name);
+#else
             PyObject * const py_name = PyString_FromString(name);
+#endif
             retval = newPerlMethod_object(self->pkg, py_name, self->obj);
             Py_DECREF(py_name);
         }
@@ -307,7 +340,12 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
     /* check if the object supports the __getitem__ protocol */
     PyObject *item = NULL;
     PyObject *key_str = PyObject_Str(key);  /* new reference */
+#if PY_MAJOR_VERSION >= 3
+    PyObject* string_as_bytes = PyUnicode_AsUTF8String(key_str);/* new reference */
+    char * const name = PyBytes_AsString(string_as_bytes);
+#else
     char * const name = PyString_AsString(key_str);
+#endif
     SV * const obj = (SV*)SvRV(self->obj);
     HV * const pkg = SvSTASH(obj);
     GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__getitem__", FALSE);
@@ -350,10 +388,81 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
     else {
         PyErr_Format(PyExc_TypeError, "'%.200s' object is unsubscriptable", Py_TYPE(self)->tp_name);
     }
+#if PY_MAJOR_VERSION >= 3
+    Py_DECREF(string_as_bytes);
+#endif
     Py_DECREF(key_str);
     return item;
 }
 
+#if PY_MAJOR_VERSION >= 3 // Python 3 rich compare
+static PyObject*
+PerlObj_richcompare(PerlObj_object *o1, PerlObj_object *o2, int op) {
+	/* Unable to compare different a Perl object with something else */
+	if (!PerlObjObject_Check(o1) || !PerlObjObject_Check(o2)) {
+		Py_RETURN_FALSE;
+	}
+
+    /* check if the object supports the __cmp__ protocol */
+    SV * const obj = (SV*)SvRV(o1->obj);
+    HV * const pkg = SvSTASH(obj);
+
+    const char* method_name = NULL;
+    switch (op) {
+    case Py_LT: method_name = "__lt__"; break;
+    case Py_LE: method_name = "__le__"; break;
+    case Py_EQ: method_name = "__eq__"; break;
+    case Py_NE: method_name = "__ne__"; break;
+    case Py_GT: method_name = "__gt__"; break;
+    case Py_GE: method_name = "__ge__"; break;
+    }
+
+    GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, method_name, FALSE);
+    if (gv && isGV(gv)) {
+        int retval;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        SV * const rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+
+        PUSHMARK(SP);
+        XPUSHs(o1->obj);
+        XPUSHs(o2->obj);
+        PUTBACK;
+
+        int const count = call_sv(rv, G_SCALAR);
+
+        SPAGAIN;
+
+        if (count > 1)
+            croak("%s may only return a single scalar!\n", method_name);
+
+        if (count == 1) { /* attribute exists! Now give the value back to Python */
+            SV * const result = POPs;
+            if(!SvIOK(result))
+                croak("%s must return an integer!\n", method_name);
+            retval = SvIV(result);
+        }
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+        if(retval == 0) {Py_RETURN_TRUE;}
+        Py_RETURN_FALSE;
+    }
+    if (SvRV(o1->obj) == SvRV(o2->obj)) {/* just compare the dereferenced object pointers */
+        if(op == Py_EQ) {Py_RETURN_TRUE;}
+        Py_RETURN_FALSE;
+    }
+    if (SvRV(o1->obj) != SvRV(o2->obj)) {
+        if(op == Py_NE) {Py_RETURN_TRUE;}
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_NOTIMPLEMENTED;
+}
+#else // Python 2 __cmp__ method
 static int
 PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
     /* check if the object supports the __cmp__ protocol */
@@ -397,6 +506,7 @@ PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
         return 0;
     return 1;
 }
+#endif
 
 static PyObject * object_dir(PerlObj_object *self, PyObject *args) {
     return get_perl_pkg_subs(self->pkg);
@@ -429,7 +539,11 @@ PyTypeObject PerlObj_type = {
     (printfunc)0,                 /*tp_print*/
     (getattrfunc)PerlObj_getattr, /*tp_getattr*/
     (setattrfunc)0,               /*tp_setattr*/
+#if PY_MAJOR_VERSION < 3
     (cmpfunc)PerlObj_compare,     /*tp_compare*/
+#else
+    0,                            /*reserved*/
+#endif
     (reprfunc)PerlObj_repr,       /*tp_repr*/
     0,                            /*tp_as_number*/
     0,                            /*tp_as_sequence*/
@@ -443,7 +557,11 @@ PyTypeObject PerlObj_type = {
     PerlObj_type__doc__, /* Documentation string */
     (traverseproc)0,           /* tp_traverse */
     (inquiry)0,                /* tp_clear */
+#if PY_MAJOR_VERSION < 3
     0,                          /* unused */
+#else
+    (richcmpfunc)PerlObj_richcompare, /* tp_richcompare */
+#endif
     0,                         /* tp_weaklistoffset */
     0,                         /* tp_iter */
     0,                         /* tp_iternext */
@@ -466,14 +584,23 @@ newPerlSub_object(PyObject *package, PyObject *sub, SV *cv) {
         str = malloc((PyObject_Length(package) + PyObject_Length(sub) + 1)
                 *sizeof(char));
 
+#if PY_MAJOR_VERSION >= 3
+        sprintf(str, "%s%s", PyBytes_AsString(package),
+                PyBytes_AsString(sub));
+#else
         sprintf(str, "%s%s", PyString_AsString(package),
                 PyString_AsString(sub));
+#endif
 
         Py_INCREF(sub);
         Py_INCREF(package);
         self->sub = sub;
         self->pkg = package;
+#if PY_MAJOR_VERSION >= 3
+        self->full = PyBytes_FromString(str);
+#else
         self->full = PyString_FromString(str);
+#endif
     }
     else {
         self->sub = NULL;
@@ -591,7 +718,11 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
     if (self->ref)
         count = perl_call_sv(self->ref, self->flgs);
     else if (self->sub && self->obj)
+#if PY_MAJOR_VERSION >= 3
+        count = perl_call_method(PyBytes_AsString(self->sub), self->flgs);
+#else
         count = perl_call_method(PyString_AsString(self->sub), self->flgs);
+#endif
     else {
         croak("Error: PerlSub called, but no C function, sub, or name found!\n");
     }
@@ -639,10 +770,17 @@ PerlSub_repr(PerlSub_object *self, PyObject *args) {
                     ? PyObject_Length(self->full)
                     : strlen("anonymous"))
                 + 1) * sizeof(char));
+#if PY_MAJOR_VERSION >= 3
+    sprintf(str, "<perl sub: '%s'>", (self->full
+                ? PyBytes_AsString(self->full)
+                : "anonymous"));
+    s = PyUnicode_FromString(str);
+#else
     sprintf(str, "<perl sub: '%s'>", (self->full
                 ? PyString_AsString(self->full)
                 : "anonymous"));
     s = PyString_FromString(str);
+#endif
     free(str);
     return s;
 }
@@ -677,9 +815,15 @@ PerlSub_getattr(PerlSub_object *self, char *name) {
     else {
         PyErr_Format(PyExc_AttributeError,
                 "Attribute '%s' not found for Perl sub '%s'", name,
+#if PY_MAJOR_VERSION < 3
                 (self->full
                  ? PyString_AsString(self->full)
                  : (self->pkg ? PyString_AsString(self->pkg) : ""))
+#else
+                (self->full
+                 ? PyBytes_AsString(self->full)
+                 : (self->pkg ? PyBytes_AsString(self->pkg) : ""))
+#endif
                 );
         retval = NULL;
     }
@@ -695,15 +839,26 @@ PerlSub_setattr(PerlSub_object *self, char *name, PyObject *v) {
     else if (strcmp(name,"flags")==0) {
         PyErr_Format(PyExc_TypeError,
                 "'flags' can only be set from an integer. '%s'",
+#if PY_MAJOR_VERSION < 3
                 (self->pkg ? PyString_AsString(self->pkg) : ""));
+#else
+                (self->pkg ? PyBytes_AsString(self->pkg) : ""));
+#endif
+
         return -1;  /* failure */
     }
     else {
         PyErr_Format(PyExc_AttributeError,
                 "Attribute '%s' not found for Perl sub '%s'", name,
+#if PY_MAJOR_VERSION < 3
                 (self->full
                  ? PyString_AsString(self->full)
                  : (self->pkg ? PyString_AsString(self->pkg) : ""))
+#else
+                (self->full
+                 ? PyBytes_AsString(self->full)
+                 : (self->pkg ? PyBytes_AsString(self->pkg) : ""))
+#endif
                 );
         return -1;  /* failure */
     }
@@ -729,7 +884,11 @@ PyTypeObject PerlSub_type = {
     (printfunc)0,                 /*tp_print*/
     (getattrfunc)PerlSub_getattr, /*tp_getattr*/
     (setattrfunc)PerlSub_setattr, /*tp_setattr*/
+#if PY_MAJOR_VERSION < 3
     (cmpfunc)0,                   /*tp_compare*/
+#else
+    0,                            /*reserved*/
+#endif
     (reprfunc)PerlSub_repr,       /*tp_repr*/
     0,                            /*tp_as_number*/
     0,                            /*tp_as_sequence*/
@@ -756,7 +915,12 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
     PyObject *retval;
     PyObject * const s = PyTuple_GetItem(args, 0);
 
-    if (!PyString_Check(s)) {
+#if PY_MAJOR_VERSION >= 3
+    int is_string = PyBytes_Check(s) || PyUnicode_Check(s);
+#else
+    int is_string = PyString_Check(s);
+#endif
+    if(!is_string) {
         return NULL;
     }
 
@@ -768,8 +932,24 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
     PUTBACK;
 
     /* run the anonymous subroutine under G_EVAL mode */
-    code = newSVpv(PyString_AsString(s),0);
+#if PY_MAJOR_VERSION >= 3
+    PyObject* s_bytes = 0;
+    char* s_c_bytes = 0;
+    if(PyUnicode_Check(s)) {
+    	s_bytes = PyUnicode_AsUTF8String(s);
+    	s_c_bytes = PyBytes_AsString(s_bytes);
+    }
+    else s_c_bytes = PyBytes_AsString(s);
+#else
+    char* s_c_bytes = PyString_AsString(s);
+#endif
+
+    code = newSVpv(s_c_bytes,0);
     count = perl_eval_sv(code, G_EVAL);
+
+#if PY_MAJOR_VERSION >= 3
+    Py_XDECREF(s_bytes);
+#endif
 
     SPAGAIN;
 
@@ -802,24 +982,45 @@ static PyObject * special_perl_eval(PyObject *ignored, PyObject *args) {
 }
 
 static PyObject * special_perl_use(PyObject *ignored, PyObject *args) {
-    PyObject * const s = PyTuple_GetItem(args, 0);
+    PyObject * s = PyTuple_GetItem(args, 0);
     char *str;
 
-    if(!PyString_Check(s)) {
+#if PY_MAJOR_VERSION >= 3
+    int is_string = PyBytes_Check(s) || PyUnicode_Check(s);
+#else
+    int is_string = PyString_Check(s);
+#endif
+    if(!is_string) {
         return NULL;
     }
 
-    Printf(("calling use...'%s'\n", PyString_AsString(s)));
+#if PY_MAJOR_VERSION >= 3
+    PyObject* s_bytes = 0;
+    char* s_c_bytes = 0;
+    if(PyUnicode_Check(s)) {
+    	s_bytes = PyUnicode_AsUTF8String(s);
+    	s_c_bytes = PyBytes_AsString(s_bytes);
+    }
+    else s_c_bytes = PyBytes_AsString(s);
+#else
+    char* s_c_bytes = PyString_AsString(s);
+#endif
+
+    Printf(("calling use...'%s'\n", s_c_bytes));
 
     str = malloc((strlen("use ")
                 + PyObject_Length(s) + 1) * sizeof(char));
-    sprintf(str, "use %s", PyString_AsString(s));
+    sprintf(str, "use %s", s_c_bytes);
 
     Printf(("eval-ing now!\n"));
     perl_eval_pv(str, TRUE);
     Printf(("'twas called!\n"));
 
     free(str);
+
+#if PY_MAJOR_VERSION >= 3
+    Py_XDECREF(s_bytes);
+#endif
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -828,10 +1029,32 @@ static PyObject * special_perl_use(PyObject *ignored, PyObject *args) {
 static PyObject * special_perl_require(PyObject *ignored, PyObject *args) {
     PyObject * const s = PyTuple_GetItem(args, 0);
 
-    if (!PyString_Check(s)) 
+#if PY_MAJOR_VERSION >= 3
+    int is_string = PyBytes_Check(s) || PyUnicode_Check(s);
+#else
+    int is_string = PyString_Check(s);
+#endif
+    if(!is_string) {
         return NULL;
+    }
 
-    perl_require_pv(PyString_AsString(s));
+#if PY_MAJOR_VERSION >= 3
+    PyObject* s_bytes = 0;
+    char* s_c_bytes = 0;
+    if(PyUnicode_Check(s)) {
+    	s_bytes = PyUnicode_AsUTF8String(s);
+    	s_c_bytes = PyBytes_AsString(s_bytes);
+    }
+    else s_c_bytes = PyBytes_AsString(s);
+#else
+    char* s_c_bytes = PyString_AsString(s);
+#endif
+
+    perl_require_pv(s_c_bytes);
+
+#if PY_MAJOR_VERSION >= 3
+    Py_XDECREF(s_bytes);
+#endif
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -865,21 +1088,51 @@ create_perl()
 void
 initperl(void){
     PyObject *m, *d, *p;
-    PyObject *dummy1 = PyString_FromString(""), 
+#if PY_MAJOR_VERSION >= 3
+    PyObject *dummy1 = PyBytes_FromString(""),
+             *dummy2 = PyBytes_FromString("main");
+#else
+    PyObject *dummy1 = PyString_FromString(""),
              *dummy2 = PyString_FromString("main");
+#endif
+
 
     /* Initialize the type of the new type objects here; doing it here
      * is required for portability to Windows without requiring C++. */
+#if PY_MAJOR_VERSION >= 3
+    PerlPkg_type.ob_base.ob_base.ob_type = &PyType_Type;
+    PyType_Ready(&PerlPkg_type);
+    PerlObj_type.ob_base.ob_base.ob_type = &PyType_Type;
+    PyType_Ready(&PerlObj_type);
+    PerlSub_type.ob_base.ob_base.ob_type = &PyType_Type;
+    PyType_Ready(&PerlSub_type);
+#else
     PerlPkg_type.ob_type = &PyType_Type;
     PerlObj_type.ob_type = &PyType_Type;
     PerlSub_type.ob_type = &PyType_Type;
+#endif
 
     /* Create the module and add the functions */
-    m = Py_InitModule4("perl", 
-            perl_functions, 
-            "perl -- Access a Perl interpreter transparently", 
-            (PyObject*)NULL, 
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef perl_module = {
+    	PyModuleDef_HEAD_INIT,
+    	"perl",
+    	"perl -- Access a Perl interpreter transparently",
+    	-1, /* m_size */
+    	perl_functions, /* m_methods */
+    	0, /* m_reload */
+    	0, /* m_traverse */
+    	0, /* m_clear */
+    	0 /* m_free */
+    };
+    m = PyModule_Create(&perl_module);
+#else
+    m = Py_InitModule4("perl",
+            perl_functions,
+            "perl -- Access a Perl interpreter transparently",
+            (PyObject*)NULL,
             PYTHON_API_VERSION);
+#endif
 
     /* Now replace the package 'perl' with the 'perl' object */
     m = PyImport_AddModule("sys");

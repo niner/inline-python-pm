@@ -29,7 +29,7 @@ The almost-one-line version is:
 INSTALLATION:
 
 This module requires Inline.pm version 0.46 or higher to be installed. In 
-addition, you need Python 1.5.2 or greater installed. Python 2.0 or greater
+addition, you need Python 2.5 or greater installed. Python 2.6, Python 3.2 or greater
 is recommended.
 
 Python has to be configured with --enable-shared. Linux distribution packages

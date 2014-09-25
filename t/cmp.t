@@ -10,6 +10,11 @@ sub __cmp__ {
     return $$self cmp $$other;
 }
 
+sub __eq__ {
+    my ($self, $other) = @_;
+    return $$self cmp $$other;	
+}
+
 package FailComparer;
 
 sub new {
@@ -18,6 +23,11 @@ sub new {
 }
 
 sub __cmp__ {
+    my ($self, $other) = @_;
+    return 'foo';
+}
+
+sub __eq__ {
     my ($self, $other) = @_;
     return 'foo';
 }
@@ -51,4 +61,4 @@ py_call_function("__main__", "test", map { Comparer->new($_) } qw(foo foo bar));
 eval {
     py_call_function("__main__", "test_fail", map { FailComparer->new($_) } qw(foo foo));
 };
-like($@, qr/__cmp__ must return an integer!/);
+like($@, qr/__ must return an integer!/);

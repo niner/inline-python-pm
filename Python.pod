@@ -747,8 +747,20 @@ tested there. I strongly suspect it will require patching. Please send me
 patches.
 
 This version of Inline::Python has been tested with Python versions from 2.5 to
-2.7. It may work on older versions but will almost certainly not work with
-Python 3.
+2.7. It may work on older versions.
+This version has also been tested with version from 3.1 to 3.4.
+
+=head1 PORTING YOUR INLINE PYTHON CODE FROM 2 TO 3
+
+First of all, follow the Python guide from 2 to 3:
+https://docs.python.org/3/howto/pyporting.html
+
+For Perl integration:
+
+ - Non-utf8-flagged Perl strings will be Python bytes, utf8-flagged Perl strings will be Python string
+ - __cmp__ is no more supported in Python 3 and has been replaced by "rich comparison" (i.e. __eq__, __le__, etc.°. 
+Since booleans in Perl are integers, renaming __cmp__ to __eq__ is often enough while wrapping a Perl object in Python.
+ - perl.require, perl.use and perl.eval accept either bytes or strings.
 
 =head1 SOURCE REPOSITORY
 

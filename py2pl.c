@@ -24,13 +24,21 @@ SV* py_false;
  ****************************/
 SV *Py2Pl(PyObject * const obj) {
     /* elw: see what python says things are */
-    int const is_string = PyString_Check(obj) || PyUnicode_Check(obj);
+#if PY_MAJOR_VERSION >= 3
+	int const is_string = PyBytes_Check(obj) || PyUnicode_Check(obj);
+#else
+	int const is_string = PyString_Check(obj) || PyUnicode_Check(obj);
+#endif
 #ifdef I_PY_DEBUG
-        PyObject *this_type = PyObject_Type(obj);
-        PyObject *t_string = PyObject_Str(this_type);
-        char *type_str = PyString_AsString(t_string);
-        Py_DECREF(t_string);
-        Printf(("type is %s\n", type_str));
+    PyObject *this_type = PyObject_Type(obj); /* new reference */
+    PyObject *t_string = PyObject_Str(this_type); /* new reference */
+#if PY_MAJOR_VERSION >= 3
+    PyObject *type_str_bytes = PyUnicode_AsUTF8String(t_string); /* new reference */
+    char *type_str = PyBytes_AsString(type_str_bytes);
+#else
+    char *type_str = PyString_AsString(t_string);
+#endif
+    Printf(("type is %s\n", type_str));
     printf("Py2Pl object:\n\t");
     PyObject_Print(obj, stdout, Py_PRINT_RAW);
     printf("\ntype:\n\t");
@@ -42,20 +50,27 @@ SV *Py2Pl(PyObject * const obj) {
     Printf(("Long check:     %i\n", PyLong_Check(obj)));
     Printf(("Float check:    %i\n", PyFloat_Check(obj)));
     Printf(("Type check:     %i\n", PyType_Check(obj)));
+#if PY_MAJOR_VERSION < 3
+    Printf(("Class check:    %i\n", PyClass_Check(obj)));
     Printf(("Instance check: %i\n", PyInstance_Check(obj)));
+#endif
     Printf(("Dict check:     %i\n", PyDict_Check(obj)));
     Printf(("Mapping check:  %i\n", PyMapping_Check(obj)));
     Printf(("Sequence check: %i\n", PySequence_Check(obj)));
     Printf(("Iter check:     %i\n", PyIter_Check(obj)));
     Printf(("Function check: %i\n", PyFunction_Check(obj)));
     Printf(("Module check:   %i\n", PyModule_Check(obj)));
-    Printf(("Class check:    %i\n", PyClass_Check(obj)));
     Printf(("Method check:   %i\n", PyMethod_Check(obj)));
+#if PY_MAJOR_VERSION < 3
     if ((obj->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         printf("heaptype true\n");
     if ((obj->ob_type->tp_flags & Py_TPFLAGS_HAVE_CLASS))
         printf("has class\n");
-        Py_DECREF(this_type);
+#else
+    Py_DECREF(type_str_bytes);
+#endif
+    Py_DECREF(t_string);
+    Py_DECREF(this_type);
 #endif
     /* elw: this needs to be early */
     /* None (like undef) */
@@ -81,13 +96,19 @@ SV *Py2Pl(PyObject * const obj) {
                 croak("Error: could not find a code reference or object method for PerlSub");
             SV * const sub_obj = (SV*)SvRV(((PerlSub_object *) obj)->obj);
             HV * const pkg = SvSTASH(sub_obj);
+#if PY_MAJOR_VERSION >= 3
+            char * const sub = PyBytes_AsString(((PerlSub_object *) obj)->sub);
+#else
             PyObject *obj_sub_str = PyObject_Str(((PerlSub_object *) obj)->sub); /* new ref. */
             char * const sub = PyString_AsString(obj_sub_str);
+#endif
             GV * const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, sub, TRUE);
             if (gv && isGV(gv)) {
                 ref = (SV *)GvCV(gv);
             }
+#if PY_MAJOR_VERSION < 3
             Py_DECREF(obj_sub_str);
+#endif
         }
         return newRV_inc((SV *) ref);
     }
@@ -97,7 +118,11 @@ SV *Py2Pl(PyObject * const obj) {
 
     /* wrap an instance of a Python class */
     /* elw: here we need to make these look like instances: */
-    if ((obj->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE) || PyInstance_Check(obj)) {
+    if ((obj->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+#if PY_MAJOR_VERSION < 3
+    		|| PyInstance_Check(obj)
+#endif
+    		) {
 
         /* This is a Python class instance -- bless it into an
          * Inline::Python::Object. If we're being called from an
@@ -171,17 +196,28 @@ SV *Py2Pl(PyObject * const obj) {
 
             if (PyUnicode_Check(key)) {
                 PyObject * const utf8_string = PyUnicode_AsUTF8String(key); /* new reference */
+#if PY_MAJOR_VERSION >= 3
+                key_val = PyBytes_AsString(utf8_string);
+                SV * const utf8_key = newSVpv(key_val, PyBytes_Size(utf8_string));
+#else
                 key_val = PyString_AsString(utf8_string);
                 SV * const utf8_key = newSVpv(key_val, PyString_Size(utf8_string));
+#endif
                 SvUTF8_on(utf8_key);
 
                 hv_store_ent(retval, utf8_key, sv_val, 0);
                 Py_DECREF(utf8_string);
             }
             else {
-                PyObject * s = NULL;
+            	PyObject * s = NULL;
+#if PY_MAJOR_VERSION >= 3
+            	PyObject * s_bytes = NULL;
+                if (PyBytes_Check(key)) {
+                	key_val = PyBytes_AsString(key);
+#else
                 if (PyString_Check(key)) {
                     key_val = PyString_AsString(key);
+#endif
                 }
                 else {
                     /* Warning -- encountered a non-string key value while converting a
@@ -190,7 +226,12 @@ SV *Py2Pl(PyObject * const obj) {
                      * Perl's key value.
                      */
                     s = PyObject_Str(key); /* new reference */
+#if PY_MAJOR_VERSION >= 3
+                    s_bytes = PyUnicode_AsUTF8String(s); /* new reference */
+                    key_val = PyBytes_AsString(s_bytes);
+#else
                     key_val = PyString_AsString(s);
+#endif
                     Py_DECREF(s);
                     if (PL_dowarn)
                         warn("Stringifying non-string hash key value: '%s'",
@@ -202,6 +243,9 @@ SV *Py2Pl(PyObject * const obj) {
                 }
 
                 hv_store(retval, key_val, strlen(key_val), sv_val, 0);
+#if PY_MAJOR_VERSION >= 3
+                Py_XDECREF(s_bytes);
+#endif
                 Py_XDECREF(s);
             }
             if (sv_isobject(sv_val)) // needed because objects get mortalized in Py2Pl
@@ -258,29 +302,51 @@ SV *Py2Pl(PyObject * const obj) {
         return inst_ptr;
     }
 
+#if PY_MAJOR_VERSION >= 3
+    /* In P3, I stringify Bytes explicitly to avoid "b'fdsfd'" as Perl string.
+     * "PyObject_Str" is fine for string object. */
+    else if (PyBytes_Check(obj)) {
+        char * const str = PyBytes_AsString(obj);
+        SV * const s2 = newSVpv(str, PyBytes_Size(obj));
+        Printf(("Py2Pl: bytes \n"));
+        return s2;
+    }
+#endif
     else if (PyUnicode_Check(obj)) {
         PyObject * const string = PyUnicode_AsUTF8String(obj);    /* new reference */
         if (!string) {
             Printf(("Py2Pl: string is NULL!? -> Py_None\n"));
             return &PL_sv_undef;
         }
+#if PY_MAJOR_VERSION >= 3
+        char * const str = PyBytes_AsString(string);
+        SV * const s2 = newSVpv(str, PyBytes_Size(string));
+#else
         char * const str = PyString_AsString(string);
         SV * const s2 = newSVpv(str, PyString_Size(string));
+#endif
         SvUTF8_on(s2);
         Printf(("Py2Pl: utf8 string \n"));
         Py_DECREF(string);
         return s2;
     }
 
-    /* a string (or number) */
+    /* P2: a string (or number). P3: number*/
     else {
         PyObject * const string = PyObject_Str(obj);    /* new reference */
         if (!string) {
             Printf(("Py2Pl: string is NULL!? -> Py_None\n"));
             return &PL_sv_undef;
         }
+#if PY_MAJOR_VERSION >= 3
+        PyObject * const string_as_bytes = PyUnicode_AsUTF8String(string);    /* new reference */
+        char * const str = PyBytes_AsString(string_as_bytes);
+        SV * const s2 = newSVpv(str, PyBytes_Size(string_as_bytes));
+        Py_DECREF(string_as_bytes);
+#else
         char * const str = PyString_AsString(string);
         SV * const s2 = newSVpv(str, PyString_Size(string));
+#endif
         Printf(("Py2Pl: string / number\n"));
         Py_DECREF(string);
         return s2;
@@ -335,7 +401,11 @@ PyObject *Pl2Py(SV * const obj) {
             Printf(("A Perl object (%s, refcnt: %i). Wrapping...\n",
                     SvPV(full_pkg, PL_na), SvREFCNT(obj)));
 
+#if PY_MAJOR_VERSION >= 3
+            PyObject * const pkg_py = PyBytes_FromString(SvPV(full_pkg, PL_na));
+#else
             PyObject * const pkg_py = PyString_FromString(SvPV(full_pkg, PL_na));
+#endif
             o = newPerlObj_object(obj, pkg_py);
 
             Py_DECREF(pkg_py);
@@ -358,10 +428,17 @@ PyObject *Pl2Py(SV * const obj) {
         char * const str = SvPV(obj, len);
         Printf(("string = "));
         Printf(("%s\n", str));
+#if PY_MAJOR_VERSION >= 3
+        if (SvUTF8(obj))
+            o = PyUnicode_DecodeUTF8(str, len, "replace");
+        else
+            o = PyBytes_FromStringAndSize(str, len);
+#else
         if (SvUTF8(obj))
             o = PyUnicode_DecodeUTF8(str, len, "replace");
         else
             o = PyString_FromStringAndSize(str, len);
+#endif
         Printf(("string ok\n"));
     }
     /* An array */
@@ -425,10 +502,17 @@ PyObject *Pl2Py(SV * const obj) {
             STRLEN len;
             char * const key_str = SvPV(key, len);
             PyObject *py_key;
+#if PY_MAJOR_VERSION >= 3
+            if (SvUTF8(key))
+                py_key = PyUnicode_DecodeUTF8(key_str, len, "replace");
+            else
+                py_key = PyBytes_FromStringAndSize(key_str, len);
+#else
             if (SvUTF8(key))
                 py_key = PyUnicode_DecodeUTF8(key_str, len, "replace");
             else
                 py_key = PyString_FromStringAndSize(key_str, len);
+#endif
             PyObject * const val = Pl2Py(hv_iterval(hv, next));
             PyDict_SetItem(o, py_key, val);
             Py_DECREF(py_key);
@@ -462,17 +546,27 @@ croak_python_exception() {
 
     PyObject * const ex_message = PyObject_Str(ex_value);    /* new reference */
 
+#if PY_MAJOR_VERSION >= 3
+    PyObject * const ex_message_bytes = PyUnicode_AsUTF8String(ex_message);    /* new reference */
+    char * const c_ex_message = PyBytes_AsString(ex_message_bytes);
+#else
+    char * const c_ex_message = PyString_AsString(ex_message);
+#endif
+
     if (ex_traceback) {
         PyObject * const tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
 
-        croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message), PyInt_AsLong(tb_lineno));
+        croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
 
         Py_DECREF(tb_lineno);
     }
     else {
-        croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, PyString_AsString(ex_message));
+        croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message);
     }
 
+#if PY_MAJOR_VERSION >= 3
+    Py_DECREF(ex_message_bytes);
+#endif
     Py_DECREF(ex_message);
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);
