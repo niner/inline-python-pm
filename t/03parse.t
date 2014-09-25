@@ -15,7 +15,7 @@ perl.ok_is(1, 1) # Well, we got this far...
 perl.use("Data::Dumper")
 perl.use("Parse::RecDescent")
 perl.eval('print "Hello\n"')
-print perl.Data.Dumper.Dumper({'neil': 'happy', 'others': 'sad'})
+print(perl.Data.Dumper.Dumper({'neil': 'happy', 'others': 'sad'}))
 o = perl.Parse.RecDescent.new("Parse::RecDescent","dumb: 'd' 'u' 'm' 'b'")
 perl.ok_is(o.dumb("dumb"), 'b')
 perl.ok_is(o.dumb("dork"), None)

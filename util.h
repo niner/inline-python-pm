@@ -5,6 +5,11 @@
 extern "C" {
 #endif
 
+
+#ifndef Py_REFCNT /* Python 2.5 does not define this */
+	#define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
+#endif
+
 /* Before Perl 5.6, this didn't exist */
 #ifndef SvPV_nolen
 #define SvPV_nolen(sv) SvPV(sv,PL_na)
@@ -37,10 +42,10 @@ typedef struct {
 #define Inline_Magic_Key(mg_ptr) (((_inline_magic*)mg_ptr)->key)
 #define Inline_Magic_Check(mg_ptr) (Inline_Magic_Key(mg_ptr)==INLINE_MAGIC_KEY)
 
-extern DL_IMPORT(PyObject *) get_perl_pkg_subs(PyObject *);
-extern DL_IMPORT(int)	     perl_pkg_exists(char *, char *);
-extern DL_IMPORT(PyObject *) perl_sub_exists(PyObject *, PyObject *);
-extern DL_IMPORT(int)        py_is_tuple(SV *arr);
+extern PyObject * get_perl_pkg_subs(PyObject *);
+extern int        perl_pkg_exists(char *, char *);
+extern PyObject * perl_sub_exists(PyObject *, PyObject *);
+extern int        py_is_tuple(SV *arr);
 
 extern MGVTBL inline_mg_vtbl;
 /* This is called when Perl deallocates a PerlObj object */

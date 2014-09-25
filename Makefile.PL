@@ -177,7 +177,7 @@ sub get_config_var {
     my $ref = shift;
     my $key = shift;
     my $exe = $ref->{path};
-    my $val = `$exe -c "import distutils.sysconfig; print distutils.sysconfig.get_config_var('$key')"`;
+    my $val = `$exe -c "import distutils.sysconfig; print(distutils.sysconfig.get_config_var('$key'))"`;
     chomp $val;
     return $val;
 }

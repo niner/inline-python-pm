@@ -14,6 +14,6 @@ def Foo():
     class Bar:
         def __init__(self): pass
         def method(self, lang):
-            print "Note: lang=%s" % lang
+            print("Note: lang=%s" % lang)
             return 42
     return Bar()

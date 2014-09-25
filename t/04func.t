@@ -6,18 +6,18 @@ BEGIN { plan tests => 3 }
 
 use Inline::Python qw(py_eval py_call_function);
 
-ok(py_eval("print 'Hello from Python!'"), undef);
+ok(py_eval("print('Hello from Python!')"), undef);
 
 py_eval(<<'END');
 
 class Foo:
 	def __init__(self):
-		print "Foo() created!"
+		print("Foo() created!")
 	def apple(self): 
-		print "Doing an apple!"
+		print("Doing an apple!")
 
 def funky(a):
-	print a
+	print(a)
 
 END
 

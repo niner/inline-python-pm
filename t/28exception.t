@@ -26,25 +26,25 @@ eval {
     error();
 };
 ok(1, 'Survived Python exception');
-is($@, "exceptions.Exception: Error! at line 3\n", 'Exception found');
+like($@, qr/Error! at line 3/, 'Exception found');
 
 eval {
     empty_error();
 };
-is($@, "exceptions.Exception:  at line 6\n", 'Exception found');
+like($@, qr/Exception:  at line 6/, 'Exception found');
 
 eval {
     name_error();
 };
-is($@, "exceptions.NameError: global name 'foo' is not defined at line 9\n", 'NameError found');
+like($@, qr/name 'foo' is not defined at line 9/, 'NameError found');
 
 my $foo = Foo->new;
 eval {
     $foo->error;
 };
-is($@, "exceptions.Exception: Error! at line 13\n", 'Exception found');
+like($@, qr/Exception: Error! at line 13/, 'Exception found');
 
 eval {
     thrower()->();
 };
-is($@, "exceptions.NameError: global name 'foo' is not defined at line 16\n", 'NameError found');
+like($@, qr/name 'foo' is not defined at line 16/, 'Exception found');

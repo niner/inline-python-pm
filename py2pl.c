@@ -81,11 +81,13 @@ SV *Py2Pl(PyObject * const obj) {
                 croak("Error: could not find a code reference or object method for PerlSub");
             SV * const sub_obj = (SV*)SvRV(((PerlSub_object *) obj)->obj);
             HV * const pkg = SvSTASH(sub_obj);
-            char * const sub = PyString_AsString(PyObject_Str(((PerlSub_object *) obj)->sub));
+            PyObject *obj_sub_str = PyObject_Str(((PerlSub_object *) obj)->sub); /* new ref. */
+            char * const sub = PyString_AsString(obj_sub_str);
             GV * const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, sub, TRUE);
             if (gv && isGV(gv)) {
                 ref = (SV *)GvCV(gv);
             }
+            Py_DECREF(obj_sub_str);
         }
         return newRV_inc((SV *) ref);
     }
@@ -168,14 +170,16 @@ SV *Py2Pl(PyObject * const obj) {
             char     *       key_val;
 
             if (PyUnicode_Check(key)) {
-                PyObject * const utf8_string = PyUnicode_AsUTF8String(key);
+                PyObject * const utf8_string = PyUnicode_AsUTF8String(key); /* new reference */
                 key_val = PyString_AsString(utf8_string);
                 SV * const utf8_key = newSVpv(key_val, PyString_Size(utf8_string));
                 SvUTF8_on(utf8_key);
 
                 hv_store_ent(retval, utf8_key, sv_val, 0);
+                Py_DECREF(utf8_string);
             }
             else {
+            	PyObject * s = NULL;
                 if (PyString_Check(key)) {
                     key_val = PyString_AsString(key);
                 }
@@ -185,7 +189,7 @@ SV *Py2Pl(PyObject * const obj) {
                      * key values. Using Python's string representation of the key as
                      * Perl's key value.
                      */
-                    PyObject * const s = PyObject_Str(key);
+                    s = PyObject_Str(key); /* new reference */
                     key_val = PyString_AsString(s);
                     Py_DECREF(s);
                     if (PL_dowarn)
@@ -198,6 +202,7 @@ SV *Py2Pl(PyObject * const obj) {
                 }
 
                 hv_store(retval, key_val, strlen(key_val), sv_val, 0);
+                Py_XDECREF(s);
             }
             if (sv_isobject(sv_val)) // needed because objects get mortalized in Py2Pl
                 SvREFCNT_inc(sv_val);
@@ -209,7 +214,7 @@ SV *Py2Pl(PyObject * const obj) {
         return newRV_noinc((SV *) retval);
     }
 
-    /* an int */
+    /* a boolean */
     else if (PyBool_Check(obj)) {
         Printf(("Py2Pl: boolean\n"));
         if (obj == Py_True)

@@ -32,9 +32,9 @@ use Inline::Python qw(py_eval py_call_function);
 
 py_eval(<<'END');
 
-def test_items(foo):
-    perl.ok(foo['test'] == 'Items test!')
-    perl.ok(foo['test'] == 'Items test!')
+def test_items(foo, s):
+    perl.ok(foo['test'] == s)
+    perl.ok(foo['test'] == s)
 
 def test_noitems(bar):
     try:
@@ -45,5 +45,5 @@ def test_noitems(bar):
 
 END
 
-ok(py_call_function("__main__", "test_items", Items->new), undef);
+ok(py_call_function("__main__", "test_items", Items->new, 'Items test!'), undef);
 ok(py_call_function("__main__", "test_noitems", NoItems->new) == 1);
