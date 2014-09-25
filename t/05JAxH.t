@@ -5,7 +5,11 @@ BEGIN {
 }
 
 use Inline Python => <<'END';
-def JAxH(x): return "Just Another %s Hacker" % x
+import sys
+if sys.version_info[0] < 3:
+    def JAxH(x): return "Just Another %s Hacker" % x
+else:
+    def JAxH(x): return "Just Another %s Hacker" % x.decode('utf-8')
 END
 
 print "not " unless JAxH('Inline') eq "Just Another Inline Hacker";

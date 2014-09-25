@@ -9,29 +9,45 @@ plan tests => 5;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline Python => <<'END';
-from types import StringType, UnicodeType
 
-def u_string():
-    return u"Hello"
+def PyVersion(): import sys; return sys.version_info[0]
 
 def string():
     return "Hello"
 
-def is_unicode(a):
-    return isinstance(a, UnicodeType)
-
-def unicode_string():
-    return u'a'
-
 def pass_through(a):
     return a
+
+if PyVersion() < 3:
+    from types import StringType, UnicodeType
+
+    def u_string():
+        return eval("u'Hello'")
+
+    def is_unicode(a):
+        return isinstance(a, UnicodeType)
+
+    def unicode_string():
+        return eval("u'a'")
+else:
+    def b_string():
+        return eval("b'Hello'")
 
 END
 
 ok(string() eq 'Hello');
-ok(u_string() eq 'Hello');
-
-ok(is_unicode('ö'), 'perl utf8 -> python unicode');
-ok(utf8::is_utf8(unicode_string()), 'python unicode -> perl utf8');
-
 ok(pass_through('ö') eq 'ö', 'utf8ness retained');
+
+if(PyVersion() < 3) {
+	ok(u_string() eq 'Hello');
+
+	ok(is_unicode('ö'), 'perl utf8 -> python unicode');
+	ok(utf8::is_utf8(unicode_string()), 'python unicode -> perl utf8');
+
+}
+else {
+	ok(b_string() eq 'Hello');
+
+	ok(!utf8::is_utf8(b_string()), 'python bytes -> not perl utf8');
+	ok(utf8::is_utf8(string()), 'python unicode -> perl utf8');
+}

@@ -69,6 +69,8 @@ import perl
 import sys
 import gc
 
+def PyVersion(): import sys; return sys.version_info[0]
+
 class A:
     def __init__(self, obj = None):
         self.data = {'obj': obj}
@@ -143,13 +145,14 @@ def call_method_param_hash(obj):
 
 def test_exec(code, *args, **kwargs):
     try:
-        exec code
-        res = test_func(*args, **kwargs)
+        exec(code, globals())
+        res = globals()['test_func'](*args, **kwargs)
         if res == sys.stdout:
             return "foo"
         return res
-    except Exception, e:
-        raise Exception(str(e) + ' at line ' + str(sys.exc_traceback.tb_next and sys.exc_traceback.tb_next.tb_lineno or sys.exc_traceback.tb_lineno))
+    except Exception:
+        exc_type, e, exc_traceback = sys.exc_info()
+        raise Exception(str(e) + ' at line ' + str(exc_traceback.tb_next.tb_lineno if exc_traceback.tb_next else exc_traceback.tb_lineno))
     finally:
         try:
             del(test_func)
@@ -305,16 +308,27 @@ ok(check_destruction( sub {
     ok((@$list == 2 and $list->[0]), 'array values look ok');
 } ), 'method returned array ref');
 
-my $test_func = <<'TEST_FUNC';
+my $test_func_p2 = <<'TEST_FUNC';
 def test_func(context):
     foo = context['foo']
     context['bar'] = foo.new()
     return foo
 TEST_FUNC
 
-ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");
+my $test_func_p3 = <<'TEST_FUNC';
+def test_func(context):
+    foo = context[b'foo']
+    context[b'bar'] = foo.new()
+    return foo
+TEST_FUNC
 
-$test_func = <<'TEST_FUNC';
+if(PyVersion() == 2) {
+ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func_p2, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");
+} else {
+ok(check_destruction( sub { py_call_function('__main__', 'test_exec', $test_func_p3, {foo => Fart::Fiddle->new}) } ), "exec'ed and deleted function");
+}
+
+my $test_func = <<'TEST_FUNC';
 def test_func(context):
     arr = []
     def find_foo(obj, i):

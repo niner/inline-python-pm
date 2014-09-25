@@ -26,16 +26,24 @@ void do_pyinit() {
     PyObject *main_dict;
     PyObject *perl_obj;
 
+#if PY_MAJOR_VERSION >= 3
+    PyObject *dummy1 = PyBytes_FromString(""),
+             *dummy2 = PyBytes_FromString("main");
+#else
     PyObject *dummy1 = PyString_FromString(""),
              *dummy2 = PyString_FromString("main");
 #endif
+#endif
     /* sometimes Python needs to know about argc and argv to be happy */
     int _python_argc = 1;
-    char *_python_argv[] = {
-        "python",
-    };
-
+#if PY_MAJOR_VERSION >= 3
+    wchar_t *_python_argv[] = {L"python",};
+    Py_SetProgramName(L"python");
+#else    
+    char *_python_argv[] = {"python",};
     Py_SetProgramName("python");
+#endif
+
     Py_Initialize();
     PySys_SetArgv(_python_argc, _python_argv);  /* Tk needs this */
 
@@ -89,20 +97,44 @@ py_study_package(PYPKG="__main__")
         PyObject * const val = PyObject_GetItem(dict,key);
         if (PyCallable_Check(val)) {
 #ifdef I_PY_DEBUG
-            printf("py_study_package: #%i (%s) callable\n", i, PyString_AsString(key));
-            printf("val:\n\t");
+#if PY_MAJOR_VERSION >= 3
+        	{
+        		PyObject* bytes_key = PyUnicode_AsUTF8String(key);
+        		char * const key_c_str = PyBytes_AsString(bytes_key);
+            	printf("py_study_package: #%i (%s) callable\n", i, key_c_str);
+                Py_DECREF(bytes_key);
+        	}
+#else
+        	printf("py_study_package: #%i (%s) callable\n", i, PyString_AsString(key));
+#endif
+        	printf("val:\n\t");
             PyObject_Print(val, stdout, Py_PRINT_RAW);
             printf("\n");
             printf("object type check gives: %i\n", PyType_Check(val));
 #endif
             if (PyFunction_Check(val)) {
+#if PY_MAJOR_VERSION >= 3
+            	PyObject* bytes_key = PyUnicode_AsUTF8String(key);
+                char * const name = PyBytes_AsString(bytes_key);
+#else
                 char * const name = PyString_AsString(key);
+#endif
                 Printf(("Found a function: %s\n", name));
                 av_push(functions, newSVpv(name,0));
+#if PY_MAJOR_VERSION >= 3
+                Py_DECREF(bytes_key);
+#endif
             }
             /* elw: if we just could get it to go through here! */
             else if (PyType_Check(val) || PyClass_Check(val)) {
+#if PY_MAJOR_VERSION >= 3
+            	PyObject* bytes_key = PyUnicode_AsUTF8String(key);
+                char * const name = PyBytes_AsString(bytes_key);
+                // In P3.4, __loader__ mapping is not easy to handle... Skip for now
+                if(strcmp(name, "__loader__") == 0) continue;
+#else
                 char * const name = PyString_AsString(key);
+#endif
                 PyObject * const cls_dict = PyObject_GetAttrString(val,"__dict__");
                 PyObject * const cls_keys = PyMapping_Keys(cls_dict);
                 int const dict_len = PyObject_Length(cls_dict);
@@ -117,7 +149,12 @@ py_study_package(PYPKG="__main__")
                 for (j=0; j<dict_len; j++) {
                     PyObject * const cls_key = PySequence_GetItem(cls_keys,j);
                     PyObject * const cls_val = PyObject_GetItem(cls_dict,cls_key);
+#if PY_MAJOR_VERSION >= 3
+                	PyObject* bytes_cls_key = PyUnicode_AsUTF8String(cls_key);
+                    char * const fname = PyBytes_AsString(bytes_cls_key);
+#else
                     char * const fname = PyString_AsString(cls_key);
+#endif                    
                     if (PyFunction_Check(cls_val)) {
                         Printf(("Found a method of %s: %s\n", name, fname));
                         av_push(methods,newSVpv(fname,0));
@@ -125,8 +162,13 @@ py_study_package(PYPKG="__main__")
                     else {
                         Printf(("not a method %s: %s\n", name, fname));
                     }
+#if PY_MAJOR_VERSION >= 3
+                    Py_DECREF(bytes_cls_key);
+#endif
                 }
-
+#if PY_MAJOR_VERSION >= 3
+                Py_DECREF(bytes_key);
+#endif
                 hv_store(classes,name,strlen(name),newRV_noinc((SV*)methods), 0);
             }
         }
@@ -399,7 +441,12 @@ py_call_method(_inst, mname, ...)
 
     Printf(("inst {%p} successfully passed the PVMG test\n", inst));
 
-    if (!(PyInstance_Check(inst) || inst->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+
+    if (!(
+#if PY_MAJOR_VERSION < 3
+    PyInstance_Check(inst) || 
+#endif    
+      inst->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         croak("Attempted to call method '%s' on a non-instance", mname);
         XSRETURN_EMPTY;
     }
@@ -491,7 +538,7 @@ py_has_attr(_inst, key)
 
   PPCODE:
 
-    Printf(("get_object_data py_get_attr\n"));
+    Printf(("get_object_data py_has_attr\n"));
 
     if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
         inst = (PyObject*)SvIV(SvRV(_inst));
@@ -523,7 +570,7 @@ py_get_attr(_inst, key)
 
   PPCODE:
 
-    Printf(("get_object_data py_has_attr\n"));
+    Printf(("get_object_data py_get_attr\n"));
 
     if (SvROK(_inst) && SvTYPE(SvRV(_inst))==SVt_PVMG) {
         inst = (PyObject*)SvIV(SvRV(_inst));

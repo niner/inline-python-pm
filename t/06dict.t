@@ -8,19 +8,35 @@ use Inline Config => DIRECTORY => './blib_test';
 use Inline Python => <<'END';
 # coding=utf-8
 
+def PyVersion(): import sys; return sys.version_info[0]
+
 class Foo:
     def __init__(self):
-        print "new Foo object being created"
+        print("new Foo object being created")
         self.data = {}
     def get_data(self): return self.data
     def set_data(self,dat):
         self.data = dat
-        self.data[u'ü'] = u'ü'
+        if PyVersion() == 3:
+            self.data['ü'] = 'ü'
+        else:
+            # u'ü' is not a valid syntax in Py3.1
+            s = '\xc3\xbc'.decode('utf-8') 
+            self.data[s] = s
 
 def get_dict():
-    return {u'föö': 'bar'}
+    if PyVersion() == 3:
+        return {'föö': 'bar'}
+    else:
+        # u'föö' is not a valid syntax in Py3.1
+        return {'f\xc3\xb6\xc3\xb6'.decode('utf-8'): 'bar'}
+
 def access_dict(test_dict):
-    return test_dict[u'föö']
+    if PyVersion() == 3:
+        return test_dict['föö']
+    else:
+        # u'föö' is not a valid syntax in Py3.1
+        return test_dict['f\xc3\xb6\xc3\xb6'.decode('utf-8')]
 END
 
 my $obj = new Foo;

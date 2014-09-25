@@ -5,6 +5,17 @@
 extern "C" {
 #endif
 
+/* Python 2 => 3 rename */
+#if PY_MAJOR_VERSION >= 3
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_Check PyLong_Check
+
+#define PyClass_Check PyType_Check
+
+#define staticforward static
+#define statichere static
+#endif
 
 #ifndef Py_REFCNT /* Python 2.5 does not define this */
 	#define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
