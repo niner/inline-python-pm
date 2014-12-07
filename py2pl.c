@@ -161,7 +161,7 @@ SV *Py2Pl(PyObject * const obj) {
             PyObject * const tmp = PySequence_GetItem(obj, i);    /* new reference */
             SV * const next = Py2Pl(tmp);
             av_push(retval, next);
-                        if (sv_isobject(next)) // needed because objects get mortalized in Py2Pl
+            if (sv_isobject(next)) // needed because objects get mortalized in Py2Pl
                 SvREFCNT_inc(next);
             Py_DECREF(tmp);
         }
