@@ -1,5 +1,9 @@
 Revision history for Perl extension Inline::Python.
 
+0.46 Sun  Dec 07 12:30:00 CET 2014 (Stefan Seifert)
+	- Python 3 support by Laurent Mazuel!
+	- Correcting KeyError to AttributeError in __getattr__ by Laurent Mazuel
+
 0.45 Sat  Sep 06 10:30:00 CEST 2014 (Stefan Seifert)
 	- Support implementing __cmp__ in Perl
 	- Skip test requiring Parse::RecDescent if the module is not installed
