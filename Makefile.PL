@@ -1,5 +1,6 @@
 use Data::Dumper;
 use Config;
+use Cwd qw(abs_path);
 use ExtUtils::MakeMaker;
 use Getopt::Long;
 
@@ -17,11 +18,14 @@ usage() if $help;
 my $sel = $ENV{INLINE_PYTHON_EXECUTABLE};
 unless ($sel) {
     my @pythons;
+    my %pythons;
     my $sep = $^O eq 'MSWin32' ? ";" : ":";
     for $p (split /$sep/, $ENV{PATH}) {
         $p =~ s/^~/$ENV{HOME}/;
         $p .= "/python";
-        push @pythons, { path => $p } if -f $p && -x $p;
+        next unless -f $p and -x $p;
+        next if $pythons{abs_path($p)}++; # filter symlinked duplicates
+        push @pythons, { path => $p };
     }
 
     # Keep them in PATH order.
