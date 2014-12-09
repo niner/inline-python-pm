@@ -49,8 +49,8 @@ o.foof({'neil': 1}, ['laura', 1], 12)
 perl.ok(1)
 perl.eval('print qq{Hello. This is Neil\\n}')
 perl.ok(1)
-perl.use('CGI')
+perl.use('FindBin')
 perl.ok(1)
 END
 
-ok(defined $::{'CGI::'});
+ok($FindBin::Bin);
