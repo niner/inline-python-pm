@@ -74,6 +74,10 @@ do_pyinit();
 
 PROTOTYPES: DISABLE
 
+void py_initialize()
+  CODE:
+    do_pyinit();
+
 void
 py_study_package(PYPKG="__main__")
     char*   PYPKG
