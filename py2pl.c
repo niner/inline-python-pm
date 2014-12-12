@@ -541,33 +541,46 @@ PyObject *Pl2Py(SV * const obj) {
 void
 croak_python_exception() {
     PyObject *ex_type, *ex_value, *ex_traceback;
-    PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
-    PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
-
-    PyObject * const ex_message = PyObject_Str(ex_value);    /* new reference */
-
-#if PY_MAJOR_VERSION >= 3
-    PyObject * const ex_message_bytes = PyUnicode_AsUTF8String(ex_message);    /* new reference */
-    char * const c_ex_message = PyBytes_AsString(ex_message_bytes);
-#else
-    char * const c_ex_message = PyString_AsString(ex_message);
-#endif
-
-    if (ex_traceback) {
-        PyObject * const tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
-
-        croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
-
-        Py_DECREF(tb_lineno);
+    if (PyErr_ExceptionMatches(PyExc_Perl)) {
+        PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
+        PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
+        PyObject *perl_exception_args = PyObject_GetAttrString(ex_value, "args");
+        PyObject *perl_exception = PySequence_GetItem(perl_exception_args, 0);
+        SV *perl_exception_object = Py2Pl(perl_exception);
+        sv_2mortal(perl_exception_object);
+        croak_sv(perl_exception_object);
+        Py_DECREF(perl_exception);
+        Py_DECREF(perl_exception_args);
     }
     else {
-        croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message);
-    }
+        PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
+        PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
+
+        PyObject * const ex_message = PyObject_Str(ex_value);    /* new reference */
 
 #if PY_MAJOR_VERSION >= 3
-    Py_DECREF(ex_message_bytes);
+        PyObject * const ex_message_bytes = PyUnicode_AsUTF8String(ex_message);    /* new reference */
+        char * const c_ex_message = PyBytes_AsString(ex_message_bytes);
+#else
+        char * const c_ex_message = PyString_AsString(ex_message);
 #endif
-    Py_DECREF(ex_message);
+
+        if (ex_traceback) {
+            PyObject * const tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
+
+            croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
+
+            Py_DECREF(tb_lineno);
+        }
+        else {
+            croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message);
+        }
+
+#if PY_MAJOR_VERSION >= 3
+        Py_DECREF(ex_message_bytes);
+#endif
+        Py_DECREF(ex_message);
+    }
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);
     Py_XDECREF(ex_traceback);

@@ -1,4 +1,6 @@
-use Test::More tests => 6;
+use strict;
+use warnings;
+use Test::More tests => 9;
 
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -19,6 +21,15 @@ class Foo:
 
 def thrower():
     return lambda: foo
+
+def catch_perl_exception(failer):
+    try:
+        failer()
+    except Exception, e:
+        return e.message
+
+def pass_through_perl_exception(failer):
+    failer()
 
 END
 
@@ -48,3 +59,18 @@ eval {
     thrower()->();
 };
 like($@, qr/name 'foo' is not defined at line 16/, 'Exception found');
+
+my $exception = catch_perl_exception(sub { die "fail!"; });
+like($exception, qr/fail!/);
+
+eval {
+    pass_through_perl_exception(sub { die "fail!"; });
+};
+like($@, qr/fail!/);
+
+my $foo_exception = bless {}, 'FooException';
+
+eval {
+    pass_through_perl_exception(sub { die $foo_exception; });
+};
+is(ref $@, 'FooException');

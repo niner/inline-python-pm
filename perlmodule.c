@@ -716,12 +716,12 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
     Py_INCREF(self);
 
     if (self->ref)
-        count = perl_call_sv(self->ref, self->flgs);
+        count = perl_call_sv(self->ref, self->flgs | G_EVAL);
     else if (self->sub && self->obj)
 #if PY_MAJOR_VERSION >= 3
-        count = perl_call_method(PyBytes_AsString(self->sub), self->flgs);
+        count = perl_call_method(PyBytes_AsString(self->sub), self->flgs | G_EVAL);
 #else
-        count = perl_call_method(PyString_AsString(self->sub), self->flgs);
+        count = perl_call_method(PyString_AsString(self->sub), self->flgs | G_EVAL);
 #endif
     else {
         croak("Error: PerlSub called, but no C function, sub, or name found!\n");
@@ -732,7 +732,10 @@ PerlSub_call(PerlSub_object *self, PyObject *args, PyObject *kw) {
 
 
     if (SvTRUE(ERRSV)) {
-        warn("%s\n", SvPV_nolen(ERRSV));
+        PyObject *exc = Pl2Py(ERRSV);
+        PyErr_SetObject(PyExc_Perl, exc);
+        ERRSV = NULL;
+        return NULL;
     }
 
     /* what to return? */
@@ -1085,6 +1088,8 @@ create_perl()
 }
 #endif
 
+PyObject *PyExc_Perl;
+
 void
 initperl(void){
     PyObject *m, *d, *p;
@@ -1145,6 +1150,7 @@ initperl(void){
 #ifdef CREATE_PERL
     create_perl();
 #endif
+    PyExc_Perl = PyErr_NewException("perl.Exception", NULL, NULL);
 
     Py_DECREF(dummy1);
     Py_DECREF(dummy2);
