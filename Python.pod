@@ -481,18 +481,18 @@ to the result.
 
 =over 4
 
-=item 0
+=item Z<>0
 
 Accepts only expressions. Complete statements yield a syntax error. An
 expression is anything that can appear to the right of an '=' sign. Returns
 the value of the expression.
 
-=item 1
+=item Z<>1
 
 The default. Accepts arbitrarily long input, which may be any valid Python 
 code. Always returns C<undef>.
 
-=item 2
+=item Z<>2
 
 Accepts exactly one statement, and prints the result to STDOUT. This is
 how Python works in interactive mode. Always returns C<undef>.
@@ -757,7 +757,7 @@ https://docs.python.org/3/howto/pyporting.html
 For Perl integration:
 
  - Non-utf8-flagged Perl strings will be Python bytes, utf8-flagged Perl strings will be Python string
- - __cmp__ is no more supported in Python 3 and has been replaced by "rich comparison" (i.e. __eq__, __le__, etc.°. 
+ - __cmp__ is no more supported in Python 3 and has been replaced by "rich comparison" (i.e. __eq__, __le__, etc.).
 Since booleans in Perl are integers, renaming __cmp__ to __eq__ is often enough while wrapping a Perl object in Python.
  - perl.require, perl.use and perl.eval accept either bytes or strings.
 
