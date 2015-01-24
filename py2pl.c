@@ -548,7 +548,9 @@ croak_python_exception() {
         PyObject *perl_exception = PySequence_GetItem(perl_exception_args, 0);
         SV *perl_exception_object = Py2Pl(perl_exception);
         sv_2mortal(perl_exception_object);
-        croak_sv(perl_exception_object);
+        SV *errsv = get_sv("@", GV_ADD);
+        sv_setsv(errsv, perl_exception_object);
+        croak(NULL);
         Py_DECREF(perl_exception);
         Py_DECREF(perl_exception_args);
     }
