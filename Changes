@@ -1,6 +1,10 @@
 Revision history for Perl extension Inline::Python.
 
-0.47 thu  Jan 22 19:35:00 CET 2015 (Stefan Seifert)
+0.48 Sat  Jan 24 10:00:00 CET 2015 (Stefan Seifert)
+	- Fix compatibility with perl < 5.14
+	- Allow shutting down Python
+
+0.47 Thu  Jan 22 19:35:00 CET 2015 (Stefan Seifert)
 	- Translate Perl exceptions into Python exceptions and make them catchable.
 	- fix some POD errors by Gregor Herrmann
 
