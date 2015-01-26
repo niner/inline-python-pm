@@ -4,7 +4,7 @@ use Carp;
 require Inline;
 require DynaLoader;
 require Exporter;
-use vars qw(@ISA $VERSION @EXPORT_OK);
+our ($VERSION, @ISA, @EXPORT_OK);
 @ISA = qw(Inline DynaLoader Exporter);
 $VERSION = '0.48';
 @EXPORT_OK = qw(py_eval
