@@ -66,6 +66,9 @@ void do_pyinit() {
 MODULE = Inline::Python   PACKAGE = Inline::Python
 
 BOOT:
+#ifndef PERL_USE_SAFE_PUTENV
+PL_use_safe_putenv = 1;
+#endif
 py_true  = perl_get_sv("Inline::Python::Boolean::true",  FALSE);
 py_false = perl_get_sv("Inline::Python::Boolean::false", FALSE);
 #ifdef CREATE_PYTHON
