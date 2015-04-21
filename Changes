@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.49 Tue  Apr 21 08:30:00 CEST 2015 (Stefan Seifert)
+	- Fix crash during perl's shutdown when env variables were modified by Python
+
 0.48 Sat  Jan 24 10:00:00 CET 2015 (Stefan Seifert)
 	- Fix compatibility with perl < 5.14
 	- Allow shutting down Python
