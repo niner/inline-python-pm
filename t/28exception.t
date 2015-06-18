@@ -6,6 +6,8 @@ use Inline Config => DIRECTORY => './blib_test';
 
 use Inline Python => <<END;
 
+import sys
+
 def error():
     raise Exception('Error!')
 
@@ -25,8 +27,9 @@ def thrower():
 def catch_perl_exception(failer):
     try:
         failer()
-    except Exception, e:
-        return e.message
+    except Exception:
+        exc_type, e, exc_traceback = sys.exc_info()
+        return str(e)
 
 def pass_through_perl_exception(failer):
     failer()
@@ -37,28 +40,28 @@ eval {
     error();
 };
 ok(1, 'Survived Python exception');
-like($@, qr/Error! at line 3/, 'Exception found');
+like($@, qr/Error! at line 5/, 'Exception found');
 
 eval {
     empty_error();
 };
-like($@, qr/Exception:  at line 6/, 'Exception found');
+like($@, qr/Exception:  at line 8/, 'Exception found');
 
 eval {
     name_error();
 };
-like($@, qr/name 'foo' is not defined at line 9/, 'NameError found');
+like($@, qr/name 'foo' is not defined at line 11/, 'NameError found');
 
 my $foo = Foo->new;
 eval {
     $foo->error;
 };
-like($@, qr/Exception: Error! at line 13/, 'Exception found');
+like($@, qr/Exception: Error! at line 15/, 'Exception found');
 
 eval {
     thrower()->();
 };
-like($@, qr/name 'foo' is not defined at line 16/, 'Exception found');
+like($@, qr/name 'foo' is not defined at line 18/, 'Exception found');
 
 my $exception = catch_perl_exception(sub { die "fail!"; });
 like($exception, qr/fail!/);
