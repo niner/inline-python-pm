@@ -6,10 +6,8 @@ use Test::More tests => 14;
 
 use Inline Python => <<END;
 
-from types import BooleanType
-
 def is_boolean(value):
-    return isinstance(value, BooleanType) and 1 or 0
+    return isinstance(value, bool) and 1 or 0
 
 def is_true(value):
     return value == True
@@ -24,7 +22,7 @@ def get_hash_with_bools():
     return {'true': True, 'false': False}
 
 def values_are_boolean(hash):
-    return isinstance(hash['true'], BooleanType) and isinstance(hash['false'], BooleanType) and 1 or 0
+    return isinstance(hash['true'], bool) and isinstance(hash['false'], bool) and 1 or 0
 
 END
 
