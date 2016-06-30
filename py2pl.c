@@ -232,7 +232,6 @@ SV *Py2Pl(PyObject * const obj) {
 #else
                     key_val = PyString_AsString(s);
 #endif
-                    Py_DECREF(s);
                     if (PL_dowarn)
                         warn("Stringifying non-string hash key value: '%s'",
                              key_val);
