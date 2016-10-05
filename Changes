@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.50 Thu  Jun 30 14:30:00 CEST 2016 (Stefan Seifert)
+	- Fix memory corruption after passing a dict with a non-string key to Perl
+
 0.49 Tue  Apr 21 08:30:00 CEST 2015 (Stefan Seifert)
 	- Fix crash during perl's shutdown when env variables were modified by Python
 
