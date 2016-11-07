@@ -1,7 +1,7 @@
 use Data::Dumper;
 use Config;
 use Cwd qw(abs_path);
-use ExtUtils::MakeMaker;
+use ExtUtils::MakeMaker 6.64;
 use Getopt::Long;
 
 GetOptions(
@@ -97,12 +97,16 @@ WriteMakefile(
               LICENSE => 'perl',
 	      VERSION_FROM => 'Python.pm',
 	      PREREQ_PM => {
-                            Inline         => 0.46,
+                            'Inline'       => 0.46,
                             'Digest::MD5'  => 2.50,
                             'Data::Dumper' => 0,
-                            'Test::More'   => 0,
-                            Test           => 0,
-			   },
+			  },
+        TEST_REQUIRES => {
+                            'Test'                => 0,
+                            'Test::More'          => 0,
+                            'Test::Deep'          => 0,
+                            'Proc::ProcessTable'  => '0.53',
+        },
 	      OBJECT => 'Python.o py2pl.o perlmodule.o util.o',
 	      META_MERGE => {
 			    "meta-spec" => { version => 2 },
