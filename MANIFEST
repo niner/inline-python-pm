@@ -9,7 +9,7 @@ py2pl.h
 Python.pm
 Python.pod
 Python.xs
-README
+README.md
 Setup.in
 t/00init.t
 t/01testpl.t
