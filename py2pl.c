@@ -206,6 +206,8 @@ SV *Py2Pl(PyObject * const obj) {
                 SvUTF8_on(utf8_key);
 
                 hv_store_ent(retval, utf8_key, sv_val, 0);
+
+                sv_2mortal(utf8_key);
                 Py_DECREF(utf8_string);
             }
             else {
