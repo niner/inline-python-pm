@@ -19,6 +19,8 @@ addons:
       - "python3.5-dev"
 install:
   - cpanm -v --installdeps --notest .
+  # Dependencies for memory leak test:
+  - cpanm -v --notest Proc::ProcessTable Test::Deep
 script:
   - perl Makefile.PL
   - make
