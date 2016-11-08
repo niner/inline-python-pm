@@ -1,5 +1,7 @@
 # INTRODUCTION
 
+[![Build Status](https://travis-ci.org/pypt/inline-python-pm.svg?branch=travis-ci)](https://travis-ci.org/pypt/inline-python-pm)
+
 `Inline::Python` -- Write Perl subs and classes in Python.
 
 `Inline::Python` lets you write Perl subroutines and classes in
