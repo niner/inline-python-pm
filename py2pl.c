@@ -559,30 +559,113 @@ croak_python_exception() {
         PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
         PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
 
-        PyObject * const ex_message = PyObject_Str(ex_value);    /* new reference */
-
+        PyObject *ex_value_utf8 = NULL;
+        PyObject *ex_message = NULL;
+        char *c_ex_message = NULL;
+        if (PyUnicode_Check(ex_value)) {
+            ex_value_utf8 = PyUnicode_AsUTF8String(ex_value);    /* new reference */
 #if PY_MAJOR_VERSION >= 3
-        PyObject * const ex_message_bytes = PyUnicode_AsUTF8String(ex_message);    /* new reference */
-        char * const c_ex_message = PyBytes_AsString(ex_message_bytes);
+            c_ex_message = PyBytes_AsString(ex_value_utf8);
 #else
-        char * const c_ex_message = PyString_AsString(ex_message);
+            ex_message = PyObject_Str(ex_value_utf8);    /* new reference */
+            c_ex_message = PyString_AsString(ex_value_utf8);
 #endif
-
-        if (ex_traceback) {
-            PyObject * const tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
-
-            croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
-
-            Py_DECREF(tb_lineno);
         }
         else {
-            croak("%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message);
+#if PY_MAJOR_VERSION >= 3
+            c_ex_message = PyBytes_AsString(ex_value);
+#else
+            ex_message = PyObject_Str(ex_value);    /* new reference */
+            c_ex_message = PyString_AsString(ex_value);
+#endif
         }
 
+        if (ex_traceback) {
+            
 #if PY_MAJOR_VERSION >= 3
-        Py_DECREF(ex_message_bytes);
+            PyObject * const traceback_module_name = PyUnicode_FromString("traceback");    /* new reference */
+#else
+            PyObject * const traceback_module_name = PyString_FromString("traceback");    /* new reference */
 #endif
-        Py_DECREF(ex_message);
+            
+            PyObject *traceback_module = PyImport_Import(traceback_module_name);
+            PyObject *format_exception_function = PyObject_GetAttrString(
+                traceback_module,
+                "format_exception"
+            );
+            
+            char *traceback_str = NULL;
+
+            if (format_exception_function) {
+                
+                PyObject *traceback_stack = PyObject_CallFunctionObjArgs(   /* new reference */
+                    format_exception_function,
+                    ex_type,
+                    ex_value,
+                    ex_traceback,
+                    NULL
+                );
+                PyObject *traceback = PyUnicode_Join(   /* new reference */
+                    PyUnicode_FromString(""),
+                    traceback_stack
+                );
+                PyObject *traceback_pystr = PyObject_Str(traceback);    /* new reference */
+                
+#if PY_MAJOR_VERSION >= 3
+                PyObject *traceback_bytes = PyUnicode_AsUTF8String(traceback_pystr); /* new reference */
+                char *traceback_str_orig = PyBytes_AsString(traceback_bytes);
+#else
+                char *traceback_str_orig = PyString_AsString(traceback_pystr);
+#endif
+                
+                traceback_str = strdup(traceback_str_orig);
+
+                Py_DECREF(traceback_str_orig);
+#if PY_MAJOR_VERSION >= 3
+                Py_DECREF(traceback_bytes);
+#endif
+                Py_DECREF(traceback_pystr);
+                Py_DECREF(traceback);
+                Py_DECREF(traceback_stack);
+                Py_DECREF(format_exception_function);
+            }
+            
+            if (traceback_str) {
+                croak("%s", traceback_str);
+
+            }
+            else {
+                PyObject * const tb_lineno = PyObject_GetAttrString(    /* new reference */
+                    ex_traceback,
+                    "tb_lineno"
+                );
+                croak(
+                    "%s: %s at line %lu\n",
+                    ((PyTypeObject *)ex_type)->tp_name,
+                    c_ex_message,
+                    PyInt_AsLong(tb_lineno)
+                );
+                Py_DECREF(tb_lineno);
+            }
+
+            Py_DECREF(traceback_module);
+            Py_DECREF(traceback_module_name);
+        }
+        else {
+            croak(
+                "%s: %s",
+                ((PyTypeObject *)ex_type)->tp_name,
+                c_ex_message
+            );
+        }
+
+        if (ex_message) {
+            Py_DECREF(ex_message); 
+        }
+        if (ex_value_utf8) {
+            Py_DECREF(ex_value_utf8);
+        }
+
     }
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);

@@ -51,4 +51,4 @@ is($foo->{get_foo}->(), 'foo', 'Returned method works');
 
 my $killer = KillMe->new();
 ok(not(eval { $killer->{foo} }), 'survived KeyError in __getattr__');
-like($@, qr/KeyError: 'foo' at line 19/, 'Got the KeyError');
+like($@, qr/line \d+, in __getattr__\s+?KeyError: 'foo'/, 'Got the KeyError');

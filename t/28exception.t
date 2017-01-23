@@ -40,28 +40,28 @@ eval {
     error();
 };
 ok(1, 'Survived Python exception');
-like($@, qr/Error! at line 5/, 'Exception found');
+like($@, qr/line \d+, in error\s+Exception: Error!/, 'Exception found');
 
 eval {
     empty_error();
 };
-like($@, qr/Exception:  at line 8/, 'Exception found');
+like($@, qr/line \d+, in empty_error\s+Exception/, 'Exception found');
 
 eval {
     name_error();
 };
-like($@, qr/name 'foo' is not defined at line 11/, 'NameError found');
+like($@, qr/line \d+, in name_error\s+NameError:( global)? name 'foo' is not defined/, 'NameError found');
 
 my $foo = Foo->new;
 eval {
     $foo->error;
 };
-like($@, qr/Exception: Error! at line 15/, 'Exception found');
+like($@, qr/line \d+, in error\s+Exception: Error!/, 'Exception found');
 
 eval {
     thrower()->();
 };
-like($@, qr/name 'foo' is not defined at line 18/, 'Exception found');
+like($@, qr/line \d+, in <lambda>\s+NameError:( global)? name 'foo' is not defined/, 'Exception found');
 
 my $exception = catch_perl_exception(sub { die "fail!"; });
 like($exception, qr/fail!/);
