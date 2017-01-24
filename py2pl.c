@@ -13,6 +13,16 @@
 SV* py_true;
 SV* py_false;
 
+// croak() doesn't release the exception string pointer after it gets passed to
+// the Perl side, and there's no way to preemptively release some other
+// pointers too, so we keep them here to be released on next call to
+// croak_python_exception().
+//
+// Technically, it still leaks memory, but only a couple of pointers at a time.
+char *last_croaked_exception;
+PyObject *last_perl_exception_args;
+PyObject *last_perl_exception;
+
 /****************************
  * SV* Py2Pl(PyObject *obj)
  *
@@ -541,24 +551,46 @@ PyObject *Pl2Py(SV * const obj) {
 
 void
 croak_python_exception() {
+
+    // Release last exception remains from previous call
+    if (last_croaked_exception) {
+        free(last_croaked_exception);
+        last_croaked_exception = NULL;
+    }
+    if (last_perl_exception) {
+        Py_DECREF(last_perl_exception);
+        last_perl_exception = NULL;
+    }
+    if (last_perl_exception_args) {
+        Py_DECREF(last_perl_exception_args);
+        last_perl_exception_args = NULL;
+    }
+
+    char *croak_str = NULL;
+
+    int exception_is_pyexc_perl = PyErr_ExceptionMatches(PyExc_Perl);
+
     PyObject *ex_type, *ex_value, *ex_traceback;
-    if (PyErr_ExceptionMatches(PyExc_Perl)) {
-        PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
-        PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
+    PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
+    PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
+
+    if (exception_is_pyexc_perl) {
         PyObject *perl_exception_args = PyObject_GetAttrString(ex_value, "args");
         PyObject *perl_exception = PySequence_GetItem(perl_exception_args, 0);
+
         SV *perl_exception_object = Py2Pl(perl_exception);
         sv_2mortal(perl_exception_object);
         SV *errsv = get_sv("@", GV_ADD);
         sv_setsv(errsv, perl_exception_object);
-        croak(NULL);
-        Py_DECREF(perl_exception);
-        Py_DECREF(perl_exception_args);
+        croak_str = NULL;
+
+        // Can't Py_DECREF() here (works on OS X, fails on Ubuntu);
+        // will release on our next call to croak_python_exception()
+        last_perl_exception = perl_exception;
+        last_perl_exception_args = perl_exception_args;
+
     }
     else {
-        PyErr_Fetch(&ex_type, &ex_value, &ex_traceback);
-        PyErr_NormalizeException(&ex_type, &ex_value, &ex_traceback);
-
         PyObject *ex_value_utf8 = NULL;
         PyObject *ex_message = NULL;
         char *c_ex_message = NULL;
@@ -588,14 +620,12 @@ croak_python_exception() {
             PyObject * const traceback_module_name = PyString_FromString("traceback");    /* new reference */
 #endif
             
-            PyObject *traceback_module = PyImport_Import(traceback_module_name);
-            PyObject *format_exception_function = PyObject_GetAttrString(
+            PyObject *traceback_module = PyImport_Import(traceback_module_name);    /* new reference */
+            PyObject *format_exception_function = PyObject_GetAttrString(    /* new reference */
                 traceback_module,
                 "format_exception"
             );
             
-            char *traceback_str = NULL;
-
             if (format_exception_function) {
                 
                 PyObject *traceback_stack = PyObject_CallFunctionObjArgs(   /* new reference */
@@ -612,13 +642,35 @@ croak_python_exception() {
                 PyObject *traceback_pystr = PyObject_Str(traceback);    /* new reference */
                 
 #if PY_MAJOR_VERSION >= 3
-                PyObject *traceback_bytes = PyUnicode_AsUTF8String(traceback_pystr); /* new reference */
-                char *traceback_str_orig = PyBytes_AsString(traceback_bytes);
+                PyObject *traceback_bytes = PyUnicode_AsUTF8String(traceback_pystr);    /* new reference */
+                char *traceback_str_orig = PyBytes_AsString(traceback_bytes);    /* new reference */
 #else
-                char *traceback_str_orig = PyString_AsString(traceback_pystr);
+                char *traceback_str_orig = PyString_AsString(traceback_pystr);    /* new reference */
 #endif
-                
-                traceback_str = strdup(traceback_str_orig);
+
+                if (traceback_str_orig) {
+                    croak_str = strdup(traceback_str_orig);
+                } else {
+                    PyObject * const tb_lineno = PyObject_GetAttrString(    /* new reference */
+                        ex_traceback,
+                        "tb_lineno"
+                    );
+
+                    size_t needed = snprintf(NULL, 0,
+                        "%s: %s at line %lu\n",
+                        ((PyTypeObject *)ex_type)->tp_name,
+                        c_ex_message,
+                        PyInt_AsLong(tb_lineno)
+                    ) + 1;
+                    croak_str = malloc(needed);
+                    snprintf(croak_str, needed, "%s: %s at line %lu\n",
+                        ((PyTypeObject *)ex_type)->tp_name,
+                        c_ex_message,
+                        PyInt_AsLong(tb_lineno)
+                    );
+
+                    Py_DECREF(tb_lineno);
+                }
 
                 Py_DECREF(traceback_str_orig);
 #if PY_MAJOR_VERSION >= 3
@@ -630,33 +682,19 @@ croak_python_exception() {
                 Py_DECREF(format_exception_function);
             }
             
-            if (traceback_str) {
-                croak("%s", traceback_str);
-
-            }
-            else {
-                PyObject * const tb_lineno = PyObject_GetAttrString(    /* new reference */
-                    ex_traceback,
-                    "tb_lineno"
-                );
-                croak(
-                    "%s: %s at line %lu\n",
-                    ((PyTypeObject *)ex_type)->tp_name,
-                    c_ex_message,
-                    PyInt_AsLong(tb_lineno)
-                );
-                Py_DECREF(tb_lineno);
-            }
-
             Py_DECREF(traceback_module);
             Py_DECREF(traceback_module_name);
         }
         else {
-            croak(
-                "%s: %s",
-                ((PyTypeObject *)ex_type)->tp_name,
-                c_ex_message
+
+            size_t needed = snprintf(NULL, 0,
+                "%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message
+            ) + 1;
+            croak_str = malloc(needed);
+            snprintf(croak_str, needed,
+                "%s: %s", ((PyTypeObject *)ex_type)->tp_name, c_ex_message
             );
+
         }
 
         if (ex_message) {
@@ -667,9 +705,19 @@ croak_python_exception() {
         }
 
     }
+
     Py_DECREF(ex_type);
     Py_DECREF(ex_value);
     Py_XDECREF(ex_traceback);
+
+    // Will release this pointer on our next call to croak_python_exception()
+    last_croaked_exception = croak_str;
+
+    if (croak_str) {
+        croak("%s", croak_str);
+    } else {
+        croak(NULL);
+    }
 }
 
 /*
