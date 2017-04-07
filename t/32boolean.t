@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Inline Config => DIRECTORY => './blib_test';
-use Test::More tests => 14;
+use Test::More tests => 16;
 
 use Inline Python => <<END;
 
@@ -44,3 +44,10 @@ ok(is_boolean(get_true()),  'True got passed as Boolean through perl space');
 ok(is_boolean(get_false()), 'False got passed as Boolean through perl space');
 
 ok(values_are_boolean(get_hash_with_bools()), 'True and False work as dict values');
+
+SKIP: {
+    skip 'JSON module required for JSON interop tests', 2
+        unless eval { require JSON; };
+    is JSON::to_json([get_true()],  {convert_blessed => 1}), '[true]';
+    is JSON::to_json([get_false()], {convert_blessed => 1}), '[false]';
+}

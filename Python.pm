@@ -395,4 +395,9 @@ sub negate {
     return $self ? $false : $true;
 }
 
+sub TO_JSON {
+    my ($self) = @_;
+    return $self ? JSON::true() : JSON::false();
+}
+
 1;
