@@ -1,6 +1,6 @@
 # INTRODUCTION
 
-[![Build Status](https://travis-ci.org/pypt/inline-python-pm.svg?branch=travis-ci)](https://travis-ci.org/pypt/inline-python-pm)
+[![Build Status](https://travis-ci.org/berkmancenter/inline-python-pm.svg?branch=travis-ci)](https://travis-ci.org/berkmancenter/inline-python-pm)
 
 `Inline::Python` -- Write Perl subs and classes in Python.
 
