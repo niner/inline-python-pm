@@ -1,0 +1,29 @@
+sudo: false
+language: perl
+perl:
+  - "5.24"
+  - "5.22"
+  # other versions are EOL already
+env:
+  - "INLINE_PYTHON_EXECUTABLE=python2.7"
+  - "INLINE_PYTHON_EXECUTABLE=python3.5"
+addons:
+  apt:
+    sources:
+      # Python 3.5 on Ubuntu 12.04
+      - "deadsnakes"
+    packages:
+      - "python2.7"
+      - "python2.7-dev"
+      - "python3.5"
+      - "python3.5-dev"
+install:
+  - cpanm -v --installdeps --notest .
+  # Dependencies for memory leak test:
+  - cpanm -v --notest Proc::ProcessTable Test::Deep
+script:
+  - perl Makefile.PL
+  - make
+  - make test
+  - make install
+  - make clean
