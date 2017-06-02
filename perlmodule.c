@@ -33,7 +33,8 @@ staticforward PyObject * PerlPkg_getattr(PerlPkg_object *self, char *name);
 
 PyObject * newPerlObj_object(SV *obj, PyObject *pkg);
 staticforward void       PerlObj_dealloc(PerlObj_object *self);
-staticforward PyObject * PerlObj_repr(PerlObj_object *self, PyObject *args);
+staticforward PyObject * PerlObj_repr(PerlObj_object *self);
+staticforward PyObject * PerlObj_str(PerlObj_object *self);
 staticforward PyObject * PerlObj_call(PerlObj_object *self, PyObject *args, PyObject *kw);
 staticforward PyObject * PerlObj_getattr(PerlObj_object *self, char *name);
 staticforward PyObject * PerlObj_mp_subscript(PerlObj_object *self, PyObject *key);
@@ -248,7 +249,7 @@ PerlObj_dealloc(PerlObj_object *self) {
 }
 
 static PyObject *
-PerlObj_repr(PerlObj_object *self, PyObject *args) {
+PerlObj_repr(PerlObj_object *self) {
     PyObject *s;
     char * const str = (char*)malloc((strlen("<perl object: ''>")
                 + PyObject_Length(self->pkg)
@@ -262,6 +263,13 @@ PerlObj_repr(PerlObj_object *self, PyObject *args) {
 #endif
     free(str);
     return s;
+}
+
+static PyObject *
+PerlObj_str(PerlObj_object *self) {
+    STRLEN len;
+    char * const str = SvPVutf8(self->obj, len);
+    return PyUnicode_DecodeUTF8(str, len, "replace");
 }
 
 static PyObject *
@@ -635,7 +643,7 @@ PyTypeObject PerlObj_type = {
     &mp_methods,                  /*tp_as_mapping*/
     (hashfunc)0,                  /*tp_hash*/
     (ternaryfunc)PerlObj_call,    /*tp_call*/
-    (reprfunc)PerlObj_repr,       /*tp_str*/
+    (reprfunc)PerlObj_str,        /*tp_str*/
 
     /* Space for future expansion */
     0L,0L,0L,0L,
