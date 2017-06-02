@@ -1,5 +1,10 @@
 Revision history for Perl extension Inline::Python.
 
+0.53 Fri  Jun 02 12:10:00 CEST 2017 (Stefan Seifert)
+	- Better support for serializing booleans with JSON
+	- Support calling Perl objects with overloaded code dereferencing
+	- Support overloaded stringification of Perl objects
+
 0.52 Thu  Dec 01 20:31:00 CET 2016 (Stefan Seifert)
 	- Fix test failing on lots of machines
 	  by Linas Valiukas
