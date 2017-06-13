@@ -268,7 +268,11 @@ PerlObj_repr(PerlObj_object *self) {
 static PyObject *
 PerlObj_str(PerlObj_object *self) {
     STRLEN len;
-    char * const str = SvPVutf8(self->obj, len);
+    SV* const sv = ((SvTHINKFIRST(self->obj) && !SvIsCOW(self->obj)) || isGV_with_GP(self->obj))
+        ? sv_mortalcopy(self->obj)
+        : self->obj;
+
+    char * const str = SvPVutf8(sv, len);
     return PyUnicode_DecodeUTF8(str, len, "replace");
 }
 
