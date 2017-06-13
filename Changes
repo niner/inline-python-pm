@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.54 Tue  Jun 13 08:40:00 CEST 2017 (Stefan Seifert)
+	- Fix object stringification crashing on Perl < 5.16 (RT #122082)
+
 0.53 Fri  Jun 02 12:10:00 CEST 2017 (Stefan Seifert)
 	- Better support for serializing booleans with JSON
 	- Support calling Perl objects with overloaded code dereferencing
