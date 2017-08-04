@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.55 Tue  Jul 03 09:30:00 CEST 2017 (Stefan Seifert)
+	- Pass Python floats as floats to Perl, not as string.
+
 0.54 Tue  Jun 13 08:40:00 CEST 2017 (Stefan Seifert)
 	- Fix object stringification crashing on Perl < 5.16 (RT #122082)
 
