@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.56 Fri  Aug 04 15:30:00 CEST 2017 (Stefan Seifert)
+	- Fix floating point related test failures on some machines.
+
 0.55 Tue  Jul 03 09:30:00 CEST 2017 (Stefan Seifert)
 	- Pass Python floats as floats to Perl, not as string.
 
