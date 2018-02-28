@@ -96,6 +96,7 @@ WriteMakefile(
               AUTHOR => 'Neil Watkiss <NEILW@cpan.org>',
               LICENSE => 'perl',
 	      VERSION_FROM => 'Python.pm',
+		  MIN_PERL_VERSION => '5.6.0',
 	      PREREQ_PM => {
                             'Inline'       => 0.46,
                             'Digest::MD5'  => 2.50,
