@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 9;
+use Test::More tests => 12;
 
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -33,6 +33,18 @@ def catch_perl_exception(failer):
 
 def pass_through_perl_exception(failer):
     failer()
+
+class CustomException(Exception):
+    pass
+
+def custom_exception():
+    raise CustomException()
+
+def zero_division_error():
+    return 1 / 0
+
+def unicode_decode_error():
+    return b"\\xc3\\x28".decode('utf-8')
 
 END
 
@@ -77,3 +89,18 @@ eval {
     pass_through_perl_exception(sub { die $foo_exception; });
 };
 is(ref $@, 'FooException');
+
+eval {
+    custom_exception();
+};
+like($@, qr/CustomException/);
+
+eval {
+    zero_division_error();
+};
+like($@, qr/ZeroDivisionError/);
+
+eval {
+    unicode_decode_error();
+};
+like($@, qr/UnicodeDecodeError/);
