@@ -106,6 +106,7 @@ WriteMakefile(
                             'Test::More'          => 0,
                             'Test::Deep'          => 0,
                             'Parse::RecDescent'   => '1.967013',
+                            'Test::Number::Delta' => 0,
                             'Proc::ProcessTable'  => '0.53',
         },
 	      OBJECT => 'Python.o py2pl.o perlmodule.o util.o',

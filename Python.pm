@@ -6,7 +6,7 @@ require DynaLoader;
 require Exporter;
 our ($VERSION, @ISA, @EXPORT_OK);
 @ISA = qw(Inline DynaLoader Exporter);
-$VERSION = '0.52';
+$VERSION = '0.56';
 @EXPORT_OK = qw(py_eval
 		py_new_object
 		py_call_method 
@@ -393,6 +393,11 @@ sub bool {
 sub negate {
     my ($self) = @_;
     return $self ? $false : $true;
+}
+
+sub TO_JSON {
+    my ($self) = @_;
+    return $self ? JSON::true() : JSON::false();
 }
 
 1;

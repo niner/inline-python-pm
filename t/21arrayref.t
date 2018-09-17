@@ -1,4 +1,5 @@
 use Test::More tests => 19;
+use Test::Number::Delta;
 
 use Inline Config => DIRECTORY => './blib_test';
 use Inline::Python qw(py_call_function py_is_tuple);
@@ -52,10 +53,10 @@ is(len_perl_array(Foo->new), 3);
 is(len_empty_perl_array(Foo->new), 0);
 
 my @b = (0.1,0.2,0.3,0.4);
-is((bounce_array(\@b))[0], 0.1);
+delta_ok((bounce_array(\@b))[0], 0.1);
 
 map($b[$_]+$b[$_], 0..$#b);
-is((bounce_array(\@b))[1], 0.2);
+delta_ok((bounce_array(\@b))[1], 0.2);
 
 is(ref return_tuple(), 'ARRAY');
 is(scalar @{ return_tuple() }, 3);

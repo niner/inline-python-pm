@@ -291,6 +291,13 @@ SV *Py2Pl(PyObject * const obj) {
         return sv;
     }
 
+    /* a float */
+    else if (PyFloat_Check(obj)) {
+        SV * const sv = newSVnv(PyFloat_AsDouble(obj));
+        Printf(("Py2Pl: float\n"));
+        return sv;
+    }
+
     /* a function or method */
     else if (PyFunction_Check(obj) || PyMethod_Check(obj)) {
         SV * const inst_ptr = newSViv(0);
