@@ -33,7 +33,9 @@ staticforward PyObject * PerlPkg_getattr(PerlPkg_object *self, char *name);
 
 PyObject * newPerlObj_object(SV *obj, PyObject *pkg);
 staticforward void       PerlObj_dealloc(PerlObj_object *self);
-staticforward PyObject * PerlObj_repr(PerlObj_object *self, PyObject *args);
+staticforward PyObject * PerlObj_repr(PerlObj_object *self);
+staticforward PyObject * PerlObj_str(PerlObj_object *self);
+staticforward PyObject * PerlObj_call(PerlObj_object *self, PyObject *args, PyObject *kw);
 staticforward PyObject * PerlObj_getattr(PerlObj_object *self, char *name);
 staticforward PyObject * PerlObj_mp_subscript(PerlObj_object *self, PyObject *key);
 
@@ -247,7 +249,7 @@ PerlObj_dealloc(PerlObj_object *self) {
 }
 
 static PyObject *
-PerlObj_repr(PerlObj_object *self, PyObject *args) {
+PerlObj_repr(PerlObj_object *self) {
     PyObject *s;
     char * const str = (char*)malloc((strlen("<perl object: ''>")
                 + PyObject_Length(self->pkg)
@@ -261,6 +263,17 @@ PerlObj_repr(PerlObj_object *self, PyObject *args) {
 #endif
     free(str);
     return s;
+}
+
+static PyObject *
+PerlObj_str(PerlObj_object *self) {
+    STRLEN len;
+    SV* const sv = ((SvTHINKFIRST(self->obj) && !SvIsCOW(self->obj)) || isGV_with_GP(self->obj))
+        ? sv_mortalcopy(self->obj)
+        : self->obj;
+
+    char * const str = SvPVutf8(sv, len);
+    return PyUnicode_DecodeUTF8(str, len, "replace");
 }
 
 static PyObject *
@@ -393,6 +406,90 @@ PerlObj_mp_subscript(PerlObj_object *self, PyObject *key) {
 #endif
     Py_DECREF(key_str);
     return item;
+}
+
+static PyObject *
+PerlObj_call(PerlObj_object *self, PyObject *args, PyObject *kw) {
+    dSP;
+    int i;
+    int const len = PyObject_Length(args);
+    int count;
+    PyObject *retval;
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(SP);
+
+    if (self->obj) XPUSHs(self->obj);
+
+    if (kw) { /* if keyword arguments are present, positional arguments get pushed as into an arrayref */
+        AV * const positional = newAV();
+        for (i=0; i<len; i++) {
+            SV * const arg = Py2Pl(PyTuple_GetItem(args, i));
+            av_push(positional, sv_isobject(arg) ? SvREFCNT_inc(arg) : arg);
+        }
+        XPUSHs((SV *) sv_2mortal((SV *) newRV_inc((SV *) positional)));
+
+        SV * const kw_hash = Py2Pl(kw);
+        XPUSHs(kw_hash);
+        sv_2mortal(kw_hash);
+        sv_2mortal((SV *)positional);
+    }
+    else {
+        for (i=0; i<len; i++) {
+            SV * const arg = Py2Pl(PyTuple_GetItem(args, i));
+            XPUSHs(arg);
+            if (! sv_isobject(arg))
+                sv_2mortal(arg);
+        }
+    }
+
+    PUTBACK;
+
+    /* call the function */
+    /* because the Perl sub *could* be arbitrary Python code,
+     * I probably should temporarily hold a reference here */
+    Py_INCREF(self);
+
+    count = perl_call_sv(self->obj, G_EVAL);
+    SPAGAIN;
+
+    Py_DECREF(self); /* release*/
+
+
+    if (SvTRUE(ERRSV)) {
+        PyObject *exc = Pl2Py(ERRSV);
+        PyErr_SetObject(PyExc_Perl, exc);
+        ERRSV = NULL;
+        return NULL;
+    }
+
+    /* what to return? */
+    if (count == 0) {
+        Py_INCREF(Py_None);
+        retval = Py_None;
+    }
+    else if (count == 1) {
+        retval = Pl2Py(POPs);
+    }
+    else {
+        AV * const lst = newAV();
+        av_extend(lst, count);
+        for (i = count - 1; i >= 0; i--) {
+            av_store(lst, i, SvREFCNT_inc(POPs));
+        }
+        SV * const rv_lst = newRV_inc((SV*)lst);
+        retval = Pl2Py(rv_lst);
+        SvREFCNT_dec(rv_lst);
+        sv_2mortal((SV*)lst); /* this will get killed shortly */
+    }
+
+    PUTBACK;
+    FREETMPS;
+    LEAVE;
+
+    return retval;
 }
 
 #if PY_MAJOR_VERSION >= 3 // Python 3 rich compare
@@ -549,8 +646,8 @@ PyTypeObject PerlObj_type = {
     0,                            /*tp_as_sequence*/
     &mp_methods,                  /*tp_as_mapping*/
     (hashfunc)0,                  /*tp_hash*/
-    (ternaryfunc)0,               /*tp_call*/
-    (reprfunc)PerlObj_repr,       /*tp_str*/
+    (ternaryfunc)PerlObj_call,    /*tp_call*/
+    (reprfunc)PerlObj_str,        /*tp_str*/
 
     /* Space for future expansion */
     0L,0L,0L,0L,

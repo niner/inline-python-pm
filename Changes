@@ -1,5 +1,19 @@
 Revision history for Perl extension Inline::Python.
 
+0.56 Fri  Aug 04 15:30:00 CEST 2017 (Stefan Seifert)
+	- Fix floating point related test failures on some machines.
+
+0.55 Tue  Jul 03 09:30:00 CEST 2017 (Stefan Seifert)
+	- Pass Python floats as floats to Perl, not as string.
+
+0.54 Tue  Jun 13 08:40:00 CEST 2017 (Stefan Seifert)
+	- Fix object stringification crashing on Perl < 5.16 (RT #122082)
+
+0.53 Fri  Jun 02 12:10:00 CEST 2017 (Stefan Seifert)
+	- Better support for serializing booleans with JSON
+	- Support calling Perl objects with overloaded code dereferencing
+	- Support overloaded stringification of Perl objects
+
 0.52 Thu  Dec 01 20:31:00 CET 2016 (Stefan Seifert)
 	- Fix test failing on lots of machines
 	  by Linas Valiukas

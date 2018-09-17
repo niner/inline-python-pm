@@ -1,4 +1,4 @@
-use Test::More tests => 16;
+use Test::More tests => 17;
 use Data::Dumper;
 use Inline Config => DIRECTORY => './blib_test';
 
@@ -16,6 +16,9 @@ def len_array():
 def call_perl_sub(foo):
     sub = getattr(foo, 'testsub')
     return sub()
+
+def call_perl_object(foo):
+    return foo()
 
 def get_sub_from_perl(foo):
     return foo.testsub
@@ -49,6 +52,8 @@ ok($sub->(), 'Perl sub got passed through successfully');
 ok($sub = getattr_sub_from_perl(bless {}, 'Foo'), 'Got a reference to a Perl method via getattr');
 ok($sub->(), 'Perl sub got passed through getattr successfully');
 
+is(call_perl_object(bless {}, 'Foo'), 1, 'Calling Perl object works');
+
 ok(pass_through(sub { return 1; }), 'Pass through of perl sub ref works');
 
 ok(call_perl_sub(bless {}, 'Bar'), 'Call inherited Perl method via getattr');
@@ -60,6 +65,8 @@ ok(my $method = $py_foo->get_method);
 is($method->(), 'foo', 'Reference to Python method works');
 
 package Foo;
+
+use overload '&{}' => sub { return \&testsub };
 
 sub testsub {
     return 1;
