@@ -46,7 +46,7 @@ t/31stringification.t
 t/32boolean.t
 t/33reinit.t
 t/34env.t
-t/35dictunicodememleak.t
+t/35memleaks.t
 t/cmp.t
 TESTED
 ToDo
