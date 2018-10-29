@@ -122,6 +122,7 @@ SV *Py2Pl(PyObject * const obj) {
 #if PY_MAJOR_VERSION < 3
         || PyInstance_Check(obj)
 #endif
+        || (! is_string && PyMapping_Check(obj) && !obj->ob_type->tp_as_mapping->mp_length)
     ) {
 
         /* This is a Python class instance -- bless it into an

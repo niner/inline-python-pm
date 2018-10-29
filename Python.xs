@@ -451,7 +451,8 @@ py_call_method(_inst, mname, ...)
 #if PY_MAJOR_VERSION < 3
         PyInstance_Check(inst) ||
 #endif
-        inst->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        inst->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE
+        || (PyMapping_Check(inst) && !inst->ob_type->tp_as_mapping->mp_length))
     ) {
         croak("Attempted to call method '%s' on a non-instance", mname);
         XSRETURN_EMPTY;
