@@ -122,7 +122,7 @@ SV *Py2Pl(PyObject * const obj) {
 #if PY_MAJOR_VERSION < 3
         || PyInstance_Check(obj)
 #endif
-        || (! is_string && PyMapping_Check(obj) && !obj->ob_type->tp_as_mapping->mp_length)
+        || (! is_string && PyMapping_Check(obj) && obj->ob_type != &PyDict_Type)
     ) {
 
         /* This is a Python class instance -- bless it into an
@@ -177,9 +177,8 @@ SV *Py2Pl(PyObject * const obj) {
         return newRV_noinc((SV *) retval);
     }
 
-    /* a dictionary or fake Mapping object */
-    /* elw: PyMapping_Check() now returns true for strings */
-    else if (! is_string && PyMapping_Check(obj)) {
+    /* a real plain dictionary  */
+    else if (obj->ob_type == &PyDict_Type) {
         HV * const retval = newHV();
         int i;
         int const sz = PyMapping_Length(obj);
