@@ -430,6 +430,7 @@ py_call_method(_inst, mname, ...)
     PyObject *tuple;     /* the parameters */
     PyObject *py_retval; /* the return value */
     int i;
+    int is_string;
     SV *ret;
 
   PPCODE:
@@ -446,14 +447,9 @@ py_call_method(_inst, mname, ...)
 
     Printf(("inst {%p} successfully passed the PVMG test\n", inst));
 
+    is_string = PY_IS_STRING(inst);
 
-    if (!(
-#if PY_MAJOR_VERSION < 3
-        PyInstance_Check(inst) ||
-#endif
-        inst->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE
-        || (PyMapping_Check(inst) && !inst->ob_type->tp_as_mapping->mp_length))
-    ) {
+    if (!PY_IS_OBJECT(inst)) {
         croak("Attempted to call method '%s' on a non-instance", mname);
         XSRETURN_EMPTY;
     }
