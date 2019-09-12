@@ -57,6 +57,8 @@ $sel = { path => $sel } unless ref $sel eq 'HASH'; # in case the user entered a 
 
 print "Using $sel->{path}\n";
 
+my $py_major_version = get_python_major_version($sel);
+
 #============================================================================
 # Interrogate the python interpreter (or the user) for required flags
 #============================================================================
@@ -71,6 +73,7 @@ $sel->{libpython} =~ s/lib(.*)(?:\.\Q$Config{dlext}\E|\Q$Config{_a}\E)/-l$1/;
 my @flags;
 push @flags, debug_flag() if defined $gdb;
 push @flags, '-DI_PY_DEBUG' if $debug;
+push @flags, "-DPY_MAJOR_VERSION=$py_major_version";
 push @flags, 'none (perl Makefile.PL --help for details)' unless @flags;
 print <<END;
 Using These Settings:
@@ -180,6 +183,15 @@ END
     # ' stupid vim.
     }
     return 1;
+}
+
+sub get_python_major_version {
+    my $ref = shift;
+    my $exe = $ref->{path};
+    my $version = `$exe --version 2>&1`;
+
+    $version =~ /(\d+)\./;
+    return $1;
 }
 
 sub get_config_var {
