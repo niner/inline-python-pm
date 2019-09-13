@@ -16,16 +16,22 @@ usage() if $help;
 # What python are we going to try?
 #============================================================================
 my $sel = $ENV{INLINE_PYTHON_EXECUTABLE};
+my $num_python3 = 0;
 unless ($sel) {
     my @pythons;
     my %pythons;
     my $sep = $^O eq 'MSWin32' ? ";" : ":";
+    my $exe = $^O eq 'MSWin32' ? ".exe" : "";
     for $p (split /$sep/, $ENV{PATH}) {
         $p =~ s/^~/$ENV{HOME}/;
-        $p .= "/python";
-        next unless -f $p and -x $p;
-        next if $pythons{abs_path($p)}++; # filter symlinked duplicates
-        push @pythons, { path => $p };
+        for $exe_version ('3', '') {
+            my $py = "$p/python$exe_version$exe";
+            next unless -f $py and -x $py;
+            next if $pythons{abs_path($py)}++; # filter symlinked duplicates
+            my $version = get_python_major_version($py);
+            push @pythons, { path => $py, version => $version };
+            $num_python3++ if ($version == 3);
+        }
     }
 
     # Keep them in PATH order.
@@ -40,6 +46,16 @@ unless ($sel) {
         print "Using the only python executable I could find\n";
         print 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
             . " the full path to your python executable to override this selection.\n";
+    } elsif ($num_python3 == 1) {   # Prefer python 3
+        for my $python (@pythons) {
+            if ($python->{version} == 3) {
+                $sel = $python;
+                print "Using the only python 3 executable I could find even though python 2 was also found\n";
+                print 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
+                    . " the full path to your python executable to override this selection.\n";
+                last;
+            }
+        }
     }
     unless ($sel) {
         $sel = prompt("Use which?", '1');
@@ -57,7 +73,7 @@ $sel = { path => $sel } unless ref $sel eq 'HASH'; # in case the user entered a 
 
 print "Using $sel->{path}\n";
 
-my $py_major_version = get_python_major_version($sel);
+my $py_major_version = get_python_major_version($sel->{path});
 
 #============================================================================
 # Interrogate the python interpreter (or the user) for required flags
@@ -186,8 +202,7 @@ END
 }
 
 sub get_python_major_version {
-    my $ref = shift;
-    my $exe = $ref->{path};
+    my $exe = shift;
     my $version = `$exe --version 2>&1`;
 
     $version =~ /(\d+)\./;
