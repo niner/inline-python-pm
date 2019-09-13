@@ -3,6 +3,7 @@ use Config;
 use Cwd qw(abs_path);
 use ExtUtils::MakeMaker 6.64;
 use Getopt::Long;
+use File::Basename;
 
 GetOptions(
 	   'gdb:s' => \$gdb,
@@ -155,10 +156,23 @@ sub interrogate {
     $ref->{libpython} = get_config_var($ref, "LIBRARY");
     my $tmp = rindex($ref->{libpython}, '/') + 1;
     $ref->{libpython} = substr($ref->{libpython}, $tmp);
+    if ($ref->{libpython} eq 'None') {
+        special_get_libpath($ref);
+    }
     $ref->{libpath} = join '/', (get_config_var($ref, "LIBDEST"),
 				 'config')
       if ($ref->{libpath} eq 'None');
     return query_options($ref) unless sanity_check($ref);
+}
+
+sub special_get_libpath {
+	# For when sysconfig does not work (i.e. on Windows)
+    my $ref = shift;
+    my $val = `$ref->{path} -c "import distutils.command.build_ext; d=distutils.core.Distribution(); b=distutils.command.build_ext.build_ext(d);b.finalize_options();print(b.library_dirs[0])" 2>&1`;
+    chomp $val;
+    $ref->{libpath} = $val;
+    $ref->{libpython} = basename((glob("$val/libpython*.a"))[0]);
+    return $val;
 }
 
 sub test_interrogate {
