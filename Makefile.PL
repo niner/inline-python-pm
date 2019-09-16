@@ -3,6 +3,7 @@ use Config;
 use Cwd qw(abs_path);
 use ExtUtils::MakeMaker 6.64;
 use Getopt::Long;
+use File::Basename;
 
 GetOptions(
 	   'gdb:s' => \$gdb,
@@ -16,16 +17,22 @@ usage() if $help;
 # What python are we going to try?
 #============================================================================
 my $sel = $ENV{INLINE_PYTHON_EXECUTABLE};
+my $num_python3 = 0;
 unless ($sel) {
     my @pythons;
     my %pythons;
     my $sep = $^O eq 'MSWin32' ? ";" : ":";
+    my $exe = $^O eq 'MSWin32' ? ".exe" : "";
     for $p (split /$sep/, $ENV{PATH}) {
         $p =~ s/^~/$ENV{HOME}/;
-        $p .= "/python";
-        next unless -f $p and -x $p;
-        next if $pythons{abs_path($p)}++; # filter symlinked duplicates
-        push @pythons, { path => $p };
+        for $exe_version ('3', '') {
+            my $py = "$p/python$exe_version$exe";
+            next unless -f $py and -x $py;
+            next if $pythons{abs_path($py)}++; # filter symlinked duplicates
+            my $version = get_python_major_version($py);
+            push @pythons, { path => $py, version => $version };
+            $num_python3++ if ($version == 3);
+        }
     }
 
     # Keep them in PATH order.
@@ -40,6 +47,16 @@ unless ($sel) {
         print "Using the only python executable I could find\n";
         print 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
             . " the full path to your python executable to override this selection.\n";
+    } elsif ($num_python3 == 1) {   # Prefer python 3
+        for my $python (@pythons) {
+            if ($python->{version} == 3) {
+                $sel = $python;
+                print "Using the only python 3 executable I could find even though python 2 was also found\n";
+                print 'Set the INLINE_PYTHON_EXECUTABLE environment variable to'
+                    . " the full path to your python executable to override this selection.\n";
+                last;
+            }
+        }
     }
     unless ($sel) {
         $sel = prompt("Use which?", '1');
@@ -57,6 +74,8 @@ $sel = { path => $sel } unless ref $sel eq 'HASH'; # in case the user entered a 
 
 print "Using $sel->{path}\n";
 
+my $py_major_version = get_python_major_version($sel->{path});
+
 #============================================================================
 # Interrogate the python interpreter (or the user) for required flags
 #============================================================================
@@ -71,6 +90,7 @@ $sel->{libpython} =~ s/lib(.*)(?:\.\Q$Config{dlext}\E|\Q$Config{_a}\E)/-l$1/;
 my @flags;
 push @flags, debug_flag() if defined $gdb;
 push @flags, '-DI_PY_DEBUG' if $debug;
+push @flags, "-DPY_MAJOR_VERSION=$py_major_version";
 push @flags, 'none (perl Makefile.PL --help for details)' unless @flags;
 print <<END;
 Using These Settings:
@@ -136,10 +156,23 @@ sub interrogate {
     $ref->{libpython} = get_config_var($ref, "LIBRARY");
     my $tmp = rindex($ref->{libpython}, '/') + 1;
     $ref->{libpython} = substr($ref->{libpython}, $tmp);
+    if ($ref->{libpython} eq 'None') {
+        special_get_libpath($ref);
+    }
     $ref->{libpath} = join '/', (get_config_var($ref, "LIBDEST"),
 				 'config')
       if ($ref->{libpath} eq 'None');
     return query_options($ref) unless sanity_check($ref);
+}
+
+sub special_get_libpath {
+	# For when sysconfig does not work (i.e. on Windows)
+    my $ref = shift;
+    my $val = `$ref->{path} -c "import distutils.command.build_ext; d=distutils.core.Distribution(); b=distutils.command.build_ext.build_ext(d);b.finalize_options();print(b.library_dirs[0])" 2>&1`;
+    chomp $val;
+    $ref->{libpath} = $val;
+    $ref->{libpython} = basename((glob("$val/libpython*.a"))[0]);
+    return $val;
 }
 
 sub test_interrogate {
@@ -180,6 +213,14 @@ END
     # ' stupid vim.
     }
     return 1;
+}
+
+sub get_python_major_version {
+    my $exe = shift;
+    my $version = `$exe --version 2>&1`;
+
+    $version =~ /(\d+)\./;
+    return $1;
 }
 
 sub get_config_var {

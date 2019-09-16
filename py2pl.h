@@ -17,7 +17,8 @@ extern PyObject *PyExc_Perl;
 #define PY_IS_OBJECT(obj) \
     (((obj)->ob_type->tp_flags & Py_TPFLAGS_HEAPTYPE) \
         || PY_INSTANCE_CHECK((obj)) \
-        || (! is_string && PyMapping_Check((obj)) && ((obj)->ob_type != &PyDict_Type)))
+        || (! is_string && PyMapping_Check((obj)) && ((obj)->ob_type != &PyDict_Type) && \
+            ((obj)->ob_type != &PyList_Type) && ((obj)->ob_type != &PyTuple_Type)) )
 
 #endif
 
