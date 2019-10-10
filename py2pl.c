@@ -427,7 +427,7 @@ PyObject *Pl2Py(SV * const obj) {
         Printf(("string = "));
         Printf(("%s\n", str));
 #if PY_MAJOR_VERSION >= 3
-        if (SvUTF8(obj))
+        if (SvUTF8(obj) || is_ascii_string((U8*) str, len))
             o = PyUnicode_DecodeUTF8(str, len, "replace");
         else
             o = PyBytes_FromStringAndSize(str, len);
@@ -501,7 +501,7 @@ PyObject *Pl2Py(SV * const obj) {
             char * const key_str = SvPV(key, len);
             PyObject *py_key;
 #if PY_MAJOR_VERSION >= 3
-            if (SvUTF8(key))
+            if (SvUTF8(key) || is_ascii_string((U8*) key_str, len))
                 py_key = PyUnicode_DecodeUTF8(key_str, len, "replace");
             else
                 py_key = PyBytes_FromStringAndSize(key_str, len);
