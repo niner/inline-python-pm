@@ -317,8 +317,8 @@ TEST_FUNC
 
 my $test_func_p3 = <<'TEST_FUNC';
 def test_func(context):
-    foo = context[b'foo']
-    context[b'bar'] = foo.new()
+    foo = context['foo']
+    context['bar'] = foo.new()
     return foo
 TEST_FUNC
 

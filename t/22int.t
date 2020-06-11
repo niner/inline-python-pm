@@ -17,7 +17,7 @@ END
 ok(py_call_function('__main__', 'get_int'), 10, 'int arrives as int');
 if (PyVersion() == 3) {
 	ok(py_call_function('__main__', 'test', 4), "<class 'int'>", 'int arrives as int');
-	ok(py_call_function('__main__', 'test', '4'), "<class 'bytes'>", 'string that looks like a number arrives as string');
+	ok(py_call_function('__main__', 'test', '4'), "<class 'str'>", 'string that looks like a number arrives as string');
 	ok(py_call_function('__main__', 'test', py_call_function('__main__', 'get_int')), "<class 'int'>", 'int from python to perl to python is still an int');
 }
 else {
