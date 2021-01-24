@@ -9,6 +9,7 @@ use warnings;
 use Test::More;
 eval { require Proc::ProcessTable; require Test::Deep; };
 plan skip_all => "Test requires Proc::ProcessTable and Test::Deep: $@" if $@;
+plan skip_all => "Test requires an operating system providing rss info to Proc::ProcessTable module" if($^O eq 'MSWin32');
 plan tests => 2;
 
 use Inline Config => DIRECTORY => './blib_test';
