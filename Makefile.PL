@@ -171,7 +171,8 @@ sub special_get_libpath {
     my $val = `$ref->{path} -c "import distutils.command.build_ext; d=distutils.core.Distribution(); b=distutils.command.build_ext.build_ext(d);b.finalize_options();print(b.library_dirs[0])" 2>&1`;
     chomp $val;
     $ref->{libpath} = $val;
-    $ref->{libpython} = basename((glob("$val/libpython*.a"))[0]);
+    my @python_libs=sort {$b cmp $a} (glob("$val/libpython*.a"),glob("$val/python*.lib"));
+    $ref->{libpython} = basename($python_libs[0]) if(@python_libs);
     return $val;
 }
 
@@ -232,6 +233,18 @@ sub get_config_var {
     return $val;
 }
 
+sub get_default_python_lib_index {
+  my $r_found_libs=shift;
+
+  # Avoid limited API libraries (ABI), which are versionned with 1 digit only
+  # (cf https://docs.python.org/3/c-api/stable.html)
+  for my $i (0..$#{$r_found_libs}) {
+    return ($i+1) if($r_found_libs->[$i] =~ /python\d\.?\d[^\/\\]+$/i);
+  }
+  
+  return 1;
+}
+
 sub query_options {
     my $ref = shift;
 
@@ -256,7 +269,8 @@ END
 	Here are the libraries I know about:
 END
     my @libs = show_python_libs($ref);
-    my $lib = prompt("Which? Or enter another.", '1');
+    my $defaultLibIndex = $^O eq 'MSWin32' ? get_default_python_lib_index(\@libs) : 1;
+    my $lib = prompt("Which? Or enter another.", $defaultLibIndex);
     $lib = $libs[$lib-1] if $lib =~ /^\d+$/;
     $lib =~ s|\\|/|g;
     $ref->{libpath} = substr($lib, 0, rindex($lib, '/'));
