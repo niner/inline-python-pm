@@ -25,14 +25,6 @@ void do_pyinit() {
 #ifdef EXPOSE_PERL
     PyObject *main_dict;
     PyObject *perl_obj;
-
-#if PY_MAJOR_VERSION >= 3
-    PyObject *dummy1 = PyBytes_FromString(""),
-             *dummy2 = PyBytes_FromString("main");
-#else
-    PyObject *dummy1 = PyString_FromString(""),
-             *dummy2 = PyString_FromString("main");
-#endif
 #endif
     /* sometimes Python needs to know about argc and argv to be happy */
     int _python_argc = 1;
@@ -48,6 +40,14 @@ void do_pyinit() {
     PySys_SetArgv(_python_argc, _python_argv);  /* Tk needs this */
 
 #ifdef EXPOSE_PERL
+#if PY_MAJOR_VERSION >= 3
+    PyObject *dummy1 = PyBytes_FromString(""),
+             *dummy2 = PyBytes_FromString("main");
+#else
+    PyObject *dummy1 = PyString_FromString(""),
+             *dummy2 = PyString_FromString("main");
+#endif
+
     /* create the perl module and add functions */
     initperl();
 
