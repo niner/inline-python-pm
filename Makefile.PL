@@ -182,8 +182,8 @@ sub test_interrogate {
 
 This python is so old it doesn't know how to answer my questions.
 
-Instead, you will be asked a series of questions about it. If possible, 
-I will give you a set of reasonable options to choose from. You can 
+Instead, you will be asked a series of questions about it. If possible,
+I will give you a set of reasonable options to choose from. You can
 always enter the complete answer yourself if none of mine are correct.
 END
     #' stupid vim.
@@ -236,21 +236,21 @@ sub query_options {
     my $ref = shift;
 
     # Every python I've seen needs pthreads. Obviously not on windows.
-    my $libs_guess = $ref->{syslibs} ? $ref->{syslibs} : 
+    my $libs_guess = $ref->{syslibs} ? $ref->{syslibs} :
 		     $^O eq 'MSWin32' ? '' : '-lpthread';
     print <<END;
 
-	1. LIBS option. I need to know what extra libraries, if any,  
+	1. LIBS option. I need to know what extra libraries, if any,
 	   are required by this build of python. I recommend this:
 	   ${ $libs_guess ? \$libs_guess : \"No extra libraries" }
 
 END
-    $ref->{syslibs} = prompt("Enter extra libraries (e.g. -lfoo -lbar)", 
+    $ref->{syslibs} = prompt("Enter extra libraries (e.g. -lfoo -lbar)",
 			     $libs_guess);
 
     print <<END;
 
-	2. LIBRARY option. The location of the python library. 
+	2. LIBRARY option. The location of the python library.
 	   Inline::Python needs to link against it to use Python.
 
 	Here are the libraries I know about:
@@ -286,7 +286,7 @@ sub show_python_libs {
   $exe =~ s|[^/]+$||;
   $exe .= "../lib/python*/config/libpython*";
 
-  my @py_libs = 
+  my @py_libs =
    (
    (map { $exe . $_ } '.a', '.so', '.lib'),
    '/usr/lib64/libpython*.a',
@@ -327,7 +327,7 @@ sub show_python_incs {
   $exe =~ s|[^/]+$||;
   $exe .= "../include/python*";
 
-  my @py_incs = 
+  my @py_incs =
    (
    $exe,
    '/usr/local/ActivePython-*/include/python*',
