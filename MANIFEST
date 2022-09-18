@@ -47,6 +47,7 @@ t/32boolean.t
 t/33reinit.t
 t/34env.t
 t/35dictunicodememleak.t
+t/36utfstring.t
 t/cmp.t
 TESTED
 ToDo
