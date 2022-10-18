@@ -310,12 +310,6 @@ sub special_non_windows_check_shared_static_libs {
 
     if (shared_lib_priority($ref)) {
         $ref->{libpython} = $ref->{ldlib};
-        my $shared_lib = File::Spec->catfile($ref->{libpath}, $ref->{libpython});
-        if (!-f $shared_lib) {
-            # Special case for pyenv. The shared library exists in $LIBDIR instead of in
-            #   $LIBPL
-            $ref->{libpath} = get_config_var($ref, "LIBDIR");
-        }
         $ref->{rpath} = $ref->{libpath};
     }
     else {
@@ -340,9 +334,14 @@ sub special_non_windows_check_shared_static_libs {
                         . "WARNING: This is known to not work on linux.\n";
                 }
             }
-            $ref->{libpath} = get_config_var($ref, "LIBDIR");
             $ref->{libpython} = $ref->{ldlib};
-            $ref->{rpath} = $ref->{libpath};
+            my $shared_lib = File::Spec->catfile($ref->{libpath}, $ref->{libpython});
+            if (!-f $shared_lib) {
+                $ref->{libpath} = get_config_var($ref, "LIBDIR");
+            }
+            else {
+                $ref->{rpath} = $ref->{libpath};
+            }
         }
     }
 }
@@ -362,6 +361,9 @@ sub shared_lib_priority {
 
 sub check_static_library_ok {
     my ($ref) = @_;
+
+    my $static_lib = File::Spec->catfile($ref->{libpath}, $ref->{libpython});
+    return 0 if (!-f $static_lib);
 
     # We should check if the static library was compiled with -fPIC, or else
     #  we cannot create a shared Python.so from it.
