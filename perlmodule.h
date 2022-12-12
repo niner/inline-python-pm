@@ -76,6 +76,8 @@ extern PyObject * newPerlSub_object(PyObject *, PyObject *, SV *);
 extern PyObject * newPerlMethod_object(PyObject*, PyObject*, SV*);
 extern PyObject * newPerlCfun_object(PyObject* (*)(PyObject *, PyObject *));
 
+extern void initperl(void);
+
 #ifdef __cplusplus
 }
 #endif
