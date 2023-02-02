@@ -1,5 +1,16 @@
 Revision history for Perl extension Inline::Python.
 
+0.57 Sun  Sep 18 13:20:00 CEST 2022 (Stefan Seifert)
+	- Try to detect more object types.
+	- Further tighten the "is it a dict or object" check
+	- Also skip List and Tuple when checking for python object
+	- Unify "is this an object" checks into a macro to fix method calls on strange objects
+	- Define PY_MAJOR_VERSION automatically
+	- Search for and prefer python3 when building
+	- Pass ASCII strings as <class 'str'> in Python 3
+	- Fix segfault on Python 3.10 by calling Py_Initialize() before calling PyBytes_FromString()
+	- Process rss information not supported by Proc::ProcessTable on Windows
+
 0.56 Fri  Aug 04 15:30:00 CEST 2017 (Stefan Seifert)
 	- Fix floating point related test failures on some machines.
 
