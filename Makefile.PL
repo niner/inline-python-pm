@@ -429,12 +429,13 @@ sub special_get_libpath {
     my $version = `$ref->{path} -c "$pyscript"`;
     chomp $version;
     $ref->{libpath} = $val;
-    $ref->{libpython} = "python${version}.lib"; # Note: on Windows this is an import library,
-                                                #  that referes to a shared library
-                                                #  (not a static library)
+    my @python_libs=sort {$b cmp $a} (glob("$val/libpython*.a"),glob("$val/python*.lib"));
+    $ref->{libpython} = basename($python_libs[0]) if(@python_libs);
+    # Note: on Windows this is an import library, that referes to a shared library
+    # (not a static library)
     # The above file should always exist, alternatively we could
-    #  set libpath to $BINDIR and libpython to python$version.dll and use the shared library
-    #  directly instead of using the import library.
+    # set libpath to $BINDIR and libpython to python$version.dll and use the shared library
+    # directly instead of using the import library.
     return $val;
 }
 
@@ -495,6 +496,18 @@ sub get_config_var {
     return $val;
 }
 
+sub get_default_python_lib_index {
+  my $r_found_libs=shift;
+
+  # Avoid limited API libraries (ABI), which are versionned with 1 digit only
+  # (cf https://docs.python.org/3/c-api/stable.html)
+  for my $i (0..$#{$r_found_libs}) {
+    return ($i+1) if($r_found_libs->[$i] =~ /python\d\.?\d[^\/\\]+$/i);
+  }
+  
+  return 1;
+}
+
 sub query_options {
     my $ref = shift;
 
@@ -519,7 +532,8 @@ END
 	Here are the libraries I know about:
 END
     my @libs = show_python_libs($ref);
-    my $lib = prompt("Which? Or enter another.", '1');
+    my $defaultLibIndex = $^O eq 'MSWin32' ? get_default_python_lib_index(\@libs) : 1;
+    my $lib = prompt("Which? Or enter another.", $defaultLibIndex);
     $lib = $libs[$lib-1] if $lib =~ /^\d+$/;
     $lib =~ s|\\|/|g;
     my ($volume, $directories, $file) = File::Spec->splitpath( $lib );
