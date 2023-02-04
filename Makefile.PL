@@ -429,13 +429,12 @@ sub special_get_libpath {
     my $version = `$ref->{path} -c "$pyscript"`;
     chomp $version;
     $ref->{libpath} = $val;
-    my @python_libs=sort {$b cmp $a} (glob("$val/libpython*.a"),glob("$val/python*.lib"));
-    $ref->{libpython} = basename($python_libs[0]) if(@python_libs);
-    # Note: on Windows this is an import library, that referes to a shared library
-    # (not a static library)
+    $ref->{libpython} = "python${version}.lib"; # Note: on Windows this is an import library,
+                                                #  that referes to a shared library
+                                                #  (not a static library)
     # The above file should always exist, alternatively we could
-    # set libpath to $BINDIR and libpython to python$version.dll and use the shared library
-    # directly instead of using the import library.
+    #  set libpath to $BINDIR and libpython to python$version.dll and use the shared library
+    #  directly instead of using the import library.
     return $val;
 }
 
