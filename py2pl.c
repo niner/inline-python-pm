@@ -568,7 +568,7 @@ croak_python_exception() {
         if (ex_traceback) {
             PyObject * const tb_lineno = PyObject_GetAttrString(ex_traceback, "tb_lineno");
 
-            croak("%s: %s at line %i\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
+            croak("%s: %s at line %li\n", ((PyTypeObject *)ex_type)->tp_name, c_ex_message, PyInt_AsLong(tb_lineno));
 
             Py_DECREF(tb_lineno);
         }
