@@ -25,34 +25,48 @@ void do_pyinit() {
 #ifdef EXPOSE_PERL
     PyObject *main_dict;
     PyObject *perl_obj;
+    PyObject *dummy1;
+    PyObject *dummy2;
 #endif
+
     /* sometimes Python needs to know about argc and argv to be happy */
     int _python_argc = 1;
 #if PY_MAJOR_VERSION >= 3
     wchar_t *_python_argv[] = {L"python",};
-    Py_SetProgramName(L"python");
 #else
     char *_python_argv[] = {"python",};
-    Py_SetProgramName("python");
 #endif
 
+#if PY_VERSION_HEX < 0x03080000
+    Py_SetProgramName(_python_argv[0]);
     Py_Initialize();
     PySys_SetArgv(_python_argc, _python_argv);  /* Tk needs this */
+#else
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    PyConfig_SetString(&config, &config.program_name, _python_argv[0]);
+    PyConfig_SetArgv(&config, _python_argc, _python_argv);
+
+    Py_InitializeFromConfig(&config);
+
+    PyConfig_Clear(&config);
+#endif
 
 #ifdef EXPOSE_PERL
 #if PY_MAJOR_VERSION >= 3
-    PyObject *dummy1 = PyBytes_FromString(""),
-             *dummy2 = PyBytes_FromString("main");
+    dummy1 = PyBytes_FromString(""),
+    dummy2 = PyBytes_FromString("main");
 #else
-    PyObject *dummy1 = PyString_FromString(""),
-             *dummy2 = PyString_FromString("main");
+    dummy1 = PyString_FromString(""),
+    dummy2 = PyString_FromString("main");
 #endif
 
     /* create the perl module and add functions */
     initperl();
 
     /* now -- create the main 'perl' object and add it to the dictionary. */
-    perl_obj = newPerlPkg_object(dummy1,dummy2);
+    perl_obj = newPerlPkg_object(dummy1, dummy2);
     main_dict = PyModule_GetDict(PyImport_AddModule("__main__"));
     PyDict_SetItemString(main_dict, "perl", perl_obj);
 
@@ -189,10 +203,10 @@ py_eval(str, type=1)
     char *str
     int type
   PREINIT:
-    PyObject *	main_module;
-    PyObject *	globals;
-    PyObject *	locals;
-    PyObject *	py_result;
+    PyObject *main_module;
+    PyObject *globals;
+    PyObject *locals;
+    PyObject *py_result;
     int             context;
     SV*             ret = NULL;
   PPCODE:
@@ -419,8 +433,8 @@ py_call_function_ref(FUNC, ...)
 
 void
 py_call_method(_inst, mname, ...)
-    SV*	_inst;
-    char*	mname;
+    SV*   _inst;
+    char* mname;
   PREINIT:
 
     PyObject *inst;
@@ -531,7 +545,7 @@ py_call_method(_inst, mname, ...)
 
 void
 py_has_attr(_inst, key)
-    SV*	_inst;
+    SV*   _inst;
     SV*   key;
   PREINIT:
 
@@ -561,7 +575,7 @@ py_has_attr(_inst, key)
 
 void
 py_get_attr(_inst, key)
-    SV*	_inst;
+    SV*   _inst;
     SV*   key;
   PREINIT:
 
