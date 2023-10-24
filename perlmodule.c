@@ -516,7 +516,7 @@ PerlObj_richcompare(PerlObj_object *o1, PerlObj_object *o2, int op) {
 
     GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, method_name, FALSE);
     if (gv && isGV(gv)) {
-        int retval;
+        int retval = 1;
         dSP;
 
         ENTER;
@@ -567,7 +567,7 @@ PerlObj_compare(PerlObj_object *o1, PerlObj_object *o2) {
     HV * const pkg = SvSTASH(obj);
     GV* const gv = Perl_gv_fetchmethod_autoload(aTHX_ pkg, "__cmp__", FALSE);
     if (gv && isGV(gv)) {
-        int retval;
+        int retval = 1;
         dSP;
 
         ENTER;
@@ -963,10 +963,6 @@ PerlSub_setattr(PerlSub_object *self, char *name, PyObject *v) {
         return -1;  /* failure */
     }
 }
-
-static struct PyMethodDef PerlSub_methods[] = {
-    {NULL, NULL} /* sentinel */
-};
 
 /* doc string */
 static char PerlSub_type__doc__[] = 
