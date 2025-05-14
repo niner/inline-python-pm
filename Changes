@@ -1,5 +1,12 @@
 Revision history for Perl extension Inline::Python.
 
+0.58 Wed  May 14 14:17:00 CEST 2025 (Stefan Seifert)
+        - Fix compilation with Python 3.13 (Mattias Ellert)
+        - Fix compiler warnings (Mattias Ellert)
+        - Improve compatibility with strict(er) C99 compilers (Florian Weimer)
+        - Fix Makefile logic (Mattias Ellert)
+        - Fix build on Windows (Yaribz)
+
 0.57 Sun  Sep 18 13:20:00 CEST 2022 (Stefan Seifert)
 	- Try to detect more object types.
 	- Further tighten the "is it a dict or object" check
