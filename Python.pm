@@ -163,6 +163,8 @@ sub info {
     return $info;
 }
 
+our $alread_imported = { functions => {}, classes => {}, };
+
 #==========================================================================
 # Run the code, study the main namespace, and cache the results.
 #==========================================================================
@@ -179,6 +181,35 @@ sub build {
 
     # Study the main namespace
     my %namespace = py_study_package('__main__');
+
+    my $new_functions = $namespace{functions};
+
+    $new_functions = [ grep { not $alread_imported->{functions}->{$_} } @$new_functions ];
+
+    $namespace{functions} = $new_functions;
+
+    $alread_imported->{functions} = { %{$alread_imported->{functions}}, map { $_ => 1 } @$new_functions };
+
+    my $new_classes = $namespace{classes};
+
+    my $keys = [ keys %$new_classes ];
+
+    $new_classes
+	= {
+	   map
+	   {
+	       $_ => $namespace{classes}->{$_};
+	   }
+	   grep
+	   {
+	       not $alread_imported->{classes}->{$_}
+	   }
+	   keys %$new_classes
+	  };
+
+    $namespace{classes} = $new_classes;
+
+    $alread_imported->{classes} = { %{$alread_imported->{classes}}, %$new_classes };
 
     # Cache the results
     require Inline::denter;
