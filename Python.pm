@@ -221,6 +221,7 @@ sub build {
 
     $o->mkpath("$o->{API}{install_lib}/auto/$o->{API}{modpname}");
 
+    ($o->{API}{location}) = $o->{API}{location} =~ /(.*)/ if $o->{CONFIG}{UNTAINT};
     open PYDAT, "> $o->{API}{location}" or
       croak "Inline::Python couldn't write parse information!";
     print PYDAT $namespace;
@@ -238,6 +239,7 @@ sub load {
     return if $o->{ILSM}{loaded};
 
     # Load the code
+    ($o->{API}{location}) = $o->{API}{location} =~ /(.*)/ if $o->{CONFIG}{UNTAINT};
     open PYDAT, $o->{API}{location} or 
       croak "Couldn't open parse info!";
     my $pydat = join '', <PYDAT>;
