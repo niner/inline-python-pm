@@ -1,5 +1,8 @@
 Revision history for Perl extension Inline::Python.
 
+0.59 Sun  Oct 25 19:07:00 CET 2026 (Stefan Seifert)
+        - Fix installation on macOS with non-system Python (nukopian)
+
 0.58 Wed  May 14 14:17:00 CEST 2025 (Stefan Seifert)
         - Fix compilation with Python 3.13 (Mattias Ellert)
         - Fix compiler warnings (Mattias Ellert)
